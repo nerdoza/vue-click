@@ -78,7 +78,7 @@ module.exports = {
       pretty: true
     }),
     new DtsBundlePlugin({
-      name: 'Metrics',
+      name: 'VueClick',
       main: path.join(DIST, 'types/index.d.ts'),
       out: path.join(DIST, 'index.d.ts'),
       removeSource: true,
@@ -91,6 +91,6 @@ module.exports = {
     filename: 'index.js',
     path: DIST,
     libraryTarget: 'umd',
-    library: 'Metrics'
+    library: 'VueClick'
   }
 }
