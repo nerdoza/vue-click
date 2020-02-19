@@ -1,6 +1,6 @@
 {
   "name": "vue-click",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Vue plugin for advanced click directive.",
   "keywords": [
     "vue",
