@@ -1,5 +1,5 @@
 # Vue Click
-![](https://github.com/bayssmekanique/vue-click/workflows/Publish%20NPM/badge.svg?branch=production)
+![](https://github.com/bayssmekanique/vue-click/workflows/Release/badge.svg?branch=production)
 
 Vue plugin for advanced click directive.
 

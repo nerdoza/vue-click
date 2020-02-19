@@ -67,6 +67,7 @@ module.exports = {
       cleanAfterEveryBuildPatterns: [path.join(DIST, 'types')]
     }),
     new CopyWebpackPlugin([{ from: 'LICENSE.md', to: 'LICENSE.md' }]),
+    new CopyWebpackPlugin([{ from: 'README.md', to: 'README.md' }]),
     new CreateFileWebpack({
       path: './dist',
       fileName: '.npmrc',
