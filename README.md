@@ -1,5 +1,5 @@
 # Vue Click
-![](https://github.com/bayssmekanique/vue-click/workflows/Release/badge.svg?branch=production)
+![Release](https://github.com/bayssmekanique/vue-click/workflows/Release/badge.svg)
 
 Vue plugin for advanced click directive.
 
