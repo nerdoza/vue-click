@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <title>Vue-Click Test</title>
+</head>
+
+<body>
+  <div id="app">
+    <p>Click Count: {{ count }}</p>
+    <button v-on:click="click">v-on:click</button>
+    <button v-click="click">v-click</button>
+    <button v-click.throttle="click">v-click.throttle</button>
+    <button v-click.throttle.20="click">v-click.throttle.20</button>
+    <button v-click.throttle.2s="click">v-click.throttle.2s</button>
+  </div>
+</body>
+
+</html>

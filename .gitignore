@@ -1,0 +1,25 @@
+# Folder view configuration files
+.DS_Store
+Desktop.ini
+
+# Thumbnail cache files
+._*
+Thumbs.db
+
+# Temp files
+~*
+
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+
+# npm logs and deps
+node_modules/
+npm-debug.log
+npm-debug.log.*
+
+# Ignore the dist directory
+dist/*
+
+# Keep gitkeep files
+!.gitkeep

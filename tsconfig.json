@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "outDir": "./dist/types",
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "newLine": "lf",
+    "removeComments": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "lib": [
+      "dom",
+      "es2016"
+    ]
+  },
+  "include": [
+    "./src/**/*",
+    "./node_modules/@types"
+  ],
+  "exclude": [
+    "./node_modules",
+    "./dist"
+  ]
+}

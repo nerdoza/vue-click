@@ -1,0 +1,18 @@
+html, body {
+  margin: 0;
+}
+
+button, p {
+  font-family: "Courier New", Courier, monospace;
+  display: block;
+  margin: 1rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  color: rgba(0, 0, 0, 0.80);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: #E6E6E6;
+  text-decoration: none;
+  border-radius: 2px;
+}
