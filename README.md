@@ -1,5 +1,5 @@
 # Vue Click
-![Release](https://github.com/bayssmekanique/vue-click/workflows/Release/badge.svg)
+![Push](https://github.com/bayssmekanique/vue-click/workflows/Push/badge.svg)
 
 Vue plugin for advanced click directive.
 
