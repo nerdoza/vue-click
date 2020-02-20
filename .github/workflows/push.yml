@@ -23,7 +23,7 @@ jobs:
 
       - name: Publish
         if: github.ref == 'refs/heads/master'
-        uses: bayssmekanique/merge-release@/nested-pkg
+        uses: bayssmekanique/merge-release@nested-pkg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
