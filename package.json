@@ -45,12 +45,12 @@
     "write-json-webpack-plugin": "^1.1.0"
   },
   "dependencies": {},
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "private": false,
   "files": [
-    "./dist/index.js",
-    "./dist/index.d.ts",
+    "dist/index.js",
+    "dist/index.d.ts",
     "LICENSE.md",
     "README.md"
   ]
