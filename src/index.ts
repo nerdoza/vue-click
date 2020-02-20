@@ -2,34 +2,34 @@ import { DirectiveBinding, DirectiveOptions } from 'vue/types/options'
 import { VueConstructor } from 'vue/types/vue'
 import { TimeSearcher } from './time'
 
-const defaultThrottleTimeout = 300
+const defaultThrottleTimeout = 220
 
 const throttleBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   const throttleTime = TimeSearcher(binding.modifiers) ?? defaultThrottleTimeout
-  const getNewThrottleId = () => setTimeout(() => { delete el.dataset.throttledState }, throttleTime).toString()
+  let toggledState: number | null = null
+
+  const setThrottledState = () => {
+    toggledState = window.setTimeout(() => { toggledState = null }, throttleTime)
+  }
 
   el.addEventListener('click', (event) => {
     if (event.isTrusted) {
-      if (typeof el.dataset.throttledState === 'undefined') {
-        if (typeof binding?.value === 'function') {
+      if (toggledState === null) {
+        if (binding.value instanceof Function) {
           binding.value()
         }
-
-        el.dataset.throttledState = getNewThrottleId()
       } else {
-        clearTimeout(parseInt(el.dataset.throttledState, 10))
-        el.dataset.throttledState = getNewThrottleId()
+        clearTimeout(toggledState)
       }
+      setThrottledState()
     }
   }, true)
 }
 
 const defaultBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   el.addEventListener('click', (event) => {
-    if (event.isTrusted) {
-      if (typeof binding?.value === 'function') {
-        binding.value()
-      }
+    if (event.isTrusted && binding.value instanceof Function) {
+      binding.value()
     }
   }, true)
 }
