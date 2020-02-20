@@ -3,25 +3,49 @@ import { VueConstructor } from 'vue/types/vue'
 import { TimeSearcher } from './time'
 
 const defaultThrottleTimeout = 220
+const defaultDebounceTimeout = 300
 
 const throttleBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   const throttleTime = TimeSearcher(binding.modifiers) ?? defaultThrottleTimeout
-  let toggledState: number | null = null
+  let throttledState: number | null = null
 
   const setThrottledState = () => {
-    toggledState = window.setTimeout(() => { toggledState = null }, throttleTime)
+    throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
   }
 
   el.addEventListener('click', (event) => {
     if (event.isTrusted) {
-      if (toggledState === null) {
+      if (throttledState === null) {
         if (binding.value instanceof Function) {
           binding.value()
         }
       } else {
-        clearTimeout(toggledState)
+        clearTimeout(throttledState)
       }
       setThrottledState()
+    }
+  }, true)
+}
+
+const debounceBinding = (el: HTMLElement, binding: DirectiveBinding) => {
+  const debounceTime = TimeSearcher(binding.modifiers) ?? defaultDebounceTimeout
+  let debouncedState: number | null = null
+
+  const setDebouncedState = () => {
+    debouncedState = window.setTimeout(() => {
+      debouncedState = null
+      if (binding.value instanceof Function) {
+        binding.value()
+      }
+    }, debounceTime)
+  }
+
+  el.addEventListener('click', (event) => {
+    if (event.isTrusted) {
+      if (debouncedState !== null) {
+        clearTimeout(debouncedState)
+      }
+      setDebouncedState()
     }
   }, true)
 }
@@ -38,6 +62,8 @@ const clickDirective: DirectiveOptions = {
   inserted (el, binding) {
     if (binding.modifiers?.throttle === true) {
       throttleBinding(el, binding)
+    } if (binding.modifiers?.debounce === true) {
+      debounceBinding(el, binding)
     } else {
       defaultBinding(el, binding)
     }
