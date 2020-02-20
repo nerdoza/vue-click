@@ -22,9 +22,8 @@ jobs:
         run: npm run build
 
       - name: Publish
-        if: github.ref == 'refs/heads/master'
-        uses: bayssmekanique/merge-release@nested-pkg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          PACKAGE_PATH: ./dist
+        id: publish
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          package: ./dist/package.json

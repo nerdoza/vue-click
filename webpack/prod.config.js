@@ -10,7 +10,13 @@ const package = Object.assign(require('../package.json'), {
   types: 'index.d.ts',
   private: false,
   devDependencies: {},
-  scripts: {}
+  scripts: {},
+  files: [
+    './dist/index.js',
+    './dist/index.d.ts',
+    'LICENSE.md',
+    'README.md'
+  ]
 })
 
 function DtsBundlePlugin(options) { this.options = options }
@@ -66,13 +72,13 @@ module.exports = {
       cleanOnceBeforeBuildPatterns: [DIST],
       cleanAfterEveryBuildPatterns: [path.join(DIST, 'types')]
     }),
-    new CopyWebpackPlugin([{ from: 'LICENSE.md', to: 'LICENSE.md' }]),
-    new CopyWebpackPlugin([{ from: 'README.md', to: 'README.md' }]),
-    new CreateFileWebpack({
-      path: './dist',
-      fileName: '.npmrc',
-      content: '//registry.npmjs.org/:_authToken=${NPM_TOKEN}'
-    }),
+    // new CopyWebpackPlugin([{ from: 'LICENSE.md', to: 'LICENSE.md' }]),
+    // new CopyWebpackPlugin([{ from: 'README.md', to: 'README.md' }]),
+    // new CreateFileWebpack({
+    //   path: './dist',
+    //   fileName: '.npmrc',
+    //   content: '//registry.npmjs.org/:_authToken=${NPM_TOKEN}'
+    // }),
     new WriteJsonPlugin({
       object: package,
       filename: 'package.json',
