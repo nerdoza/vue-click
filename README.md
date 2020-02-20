@@ -62,16 +62,30 @@ Further modify the behavior of the button by adding modifiers:
 
 ## Throttle Modifier
 
-The `v-click` can be throttled to prevent accidentally issuing multiple click events. The event is fired immediately upon the first click, but subsequent clicks are ignored until the desired cool-off time. Each click resets the cool-off timer.
+The `v-click` can be throttled to prevent accidentally issuing multiple click events. The event is fired immediately upon the first click, but subsequent clicks are ignored until the desired time interval has passed. Each click resets the time interval.
 
 ```html
 <button v-click.throttle="openModal">
 ```
 
-The default cool-off time is `220ms`, but this can be modify by append the preferred time to the `throttle` modifier.
+The default time interval is `220ms`, but this can be modify by append the preferred time to the `throttle` modifier.
 
 ```html
 <button v-click.throttle.500ms="openModal">
+```
+
+## Debounce Modifier
+
+The `v-click` can be debounced to prevent the premature issuance of click events. The event is fired only after a time period of inactivity. Each click resets the time period.
+
+```html
+<button v-click.debounce="openModal">
+```
+
+The default time period is `300ms`, but this can be modify by append the preferred time to the `debounce` modifier.
+
+```html
+<button v-click.debounce.20ms="openModal">
 ```
 
 ## Time Modifiers
