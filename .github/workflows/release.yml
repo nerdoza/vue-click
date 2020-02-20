@@ -33,6 +33,6 @@ jobs:
       - name: Upload dist.zip to release
         uses: JasonEtco/upload-to-release@v0.1.1
         with:
-          args: dist.zip
+          args: dist.zip application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
