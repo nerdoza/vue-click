@@ -2,26 +2,23 @@ import { DirectiveBinding, DirectiveOptions } from 'vue/types/options'
 import { VueConstructor } from 'vue/types/vue'
 import { TimeSearcher } from './time'
 
-const throttledStateHandle = 'data-click-throttle-id'
 const defaultThrottleTimeout = 300
 
 const throttleBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   const throttleTime = TimeSearcher(binding.modifiers) ?? defaultThrottleTimeout
-  const getNewThrottleId = () => setTimeout(() => el.removeAttribute(throttledStateHandle), throttleTime).toString()
+  const getNewThrottleId = () => setTimeout(() => { delete el.dataset.throttledState }, throttleTime).toString()
 
   el.addEventListener('click', (event) => {
     if (event.isTrusted) {
-      const throttleState = el.getAttribute(throttledStateHandle)
-
-      if (throttleState === null) {
+      if (typeof el.dataset.throttledState === 'undefined') {
         if (typeof binding?.value === 'function') {
           binding.value()
         }
 
-        el.setAttribute(throttledStateHandle, getNewThrottleId())
+        el.dataset.throttledState = getNewThrottleId()
       } else {
-        clearTimeout(parseInt(throttleState, 10))
-        el.setAttribute(throttledStateHandle, getNewThrottleId())
+        clearTimeout(parseInt(el.dataset.throttledState, 10))
+        el.dataset.throttledState = getNewThrottleId()
       }
     }
   }, true)
