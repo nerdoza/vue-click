@@ -44,5 +44,14 @@
     "webpack-dev-server": "^3.10.3",
     "write-json-webpack-plugin": "^1.1.0"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "private": false,
+  "files": [
+    "./dist/index.js",
+    "./dist/index.d.ts",
+    "LICENSE.md",
+    "README.md"
+  ]
 }
