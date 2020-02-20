@@ -23,7 +23,7 @@ jobs:
 
       - name: Publish
         if: github.ref == 'refs/heads/master'
-        uses: adrw/merge-release@adrw/20191119.pkgDir
+        uses: bayssmekanique/merge-release@/nested-pkg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

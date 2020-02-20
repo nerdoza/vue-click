@@ -7,4 +7,4 @@ Vue plugin for advanced click directive.
 Install with [npm](https://www.npmjs.com/): `npm install vue-click`
 
 ## Copyright and License
-Copyright Zachary Cardoza under the [MIT license](LICENSE.md).
+© 2020 Zachary Cardoza under the [MIT license](LICENSE.md).
