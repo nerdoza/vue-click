@@ -5,7 +5,8 @@
   "keywords": [
     "vue",
     "click",
-    "throttle"
+    "throttle",
+    "debounce"
   ],
   "author": "Zachary Cardoza",
   "license": "MIT",
