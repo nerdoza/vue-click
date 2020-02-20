@@ -58,7 +58,7 @@ const defaultBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   }, true)
 }
 
-const clickDirective: DirectiveOptions = {
+export const ClickDirective: DirectiveOptions = {
   inserted (el, binding) {
     if (binding.modifiers?.throttle === true) {
       throttleBinding(el, binding)
@@ -72,6 +72,6 @@ const clickDirective: DirectiveOptions = {
 
 export default {
   install: (Vue: VueConstructor, options: {} = {}) => {
-    Vue.directive('click', clickDirective)
+    Vue.directive('click', ClickDirective)
   }
 }
