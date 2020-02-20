@@ -10,36 +10,36 @@ jobs:
     name: Build and Publish
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v1
+      - name: Checkout the repository
+        uses: actions/checkout@v1
 
-    - name: Use Node.js v12
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12
+      - name: Use Node.js v12
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
 
-    - name: Check if version has been updated 
-      id: check
-      uses: EndBug/version-check@v1.2.0
-      with:
-        diff-search: true
-    
-    - name: Log when changed
-      if: steps.check.outputs.changed == 'true'
-      run: 'echo "Version change found! New version: ${{ steps.check.outputs.version }} (${{ steps.check.outputs.type }})"'
+      - name: Check if version has been updated 
+        id: check
+        uses: EndBug/version-check@v1.2.0
+        with:
+          diff-search: true
+      
+      - name: Log when changed
+        if: steps.check.outputs.changed == 'true'
+        run: 'echo "Version change found! New version: ${{ steps.check.outputs.version }} (${{ steps.check.outputs.type }})"'
 
-    - name: Install Dependencies
-      if: steps.check.outputs.changed == 'true'
-      run: npm ci
+      - name: Install Dependencies
+        if: steps.check.outputs.changed == 'true'
+        run: npm ci
 
-    - name: Build
-      if: steps.check.outputs.changed == 'true'
-      run: npm run build
+      - name: Build
+        if: steps.check.outputs.changed == 'true'
+        run: npm run build
 
-    - name: Publish to NPM
-      if: steps.check.outputs.changed == 'true'
-      uses: primer/publish@v2.0.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to NPM
+        if: steps.check.outputs.changed == 'true'
+        uses: primer/publish@v2.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     
