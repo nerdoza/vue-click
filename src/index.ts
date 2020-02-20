@@ -53,7 +53,6 @@ const defaultBinding = (el: HTMLElement, binding: DirectiveBinding) => {
 
 export const ClickDirective: DirectiveOptions = {
   inserted (el, binding) {
-    console.log(binding)
     if (binding.modifiers?.throttle === true) {
       throttleBinding(el, binding)
     } else if (binding.modifiers?.debounce === true) {
