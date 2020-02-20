@@ -1,20 +1,18 @@
-import { DirectiveBinding, DirectiveOptions } from 'vue/types/options'
+import { DirectiveOptions } from 'vue/types/options'
 import { VueConstructor } from 'vue/types/vue'
-import { TimeSearcher } from './time'
+import { ParseBinding, Behavior, BindingResult } from './binding'
 
 const defaultThrottleTimeout = 220
 const defaultDebounceTimeout = 300
 
-const throttleBinding = (el: HTMLElement, binding: DirectiveBinding) => {
-  const throttleTime = TimeSearcher(binding.modifiers) ?? defaultThrottleTimeout
+const throttleBinding = (el: HTMLElement, binding: BindingResult) => {
+  const throttleTime = binding.time ?? defaultThrottleTimeout
   let throttledState: number | null = null
 
   el.addEventListener('click', (event) => {
     if (event.isTrusted) {
       if (throttledState === null) {
-        if (binding.value instanceof Function) {
-          binding.value(binding.arg)
-        }
+        binding.dispatch()
       } else {
         clearTimeout(throttledState)
       }
@@ -23,8 +21,8 @@ const throttleBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   }, true)
 }
 
-const debounceBinding = (el: HTMLElement, binding: DirectiveBinding) => {
-  const debounceTime = TimeSearcher(binding.modifiers) ?? defaultDebounceTimeout
+const debounceBinding = (el: HTMLElement, binding: BindingResult) => {
+  const debounceTime = binding.time ?? defaultDebounceTimeout
   let debouncedState: number | null = null
 
   el.addEventListener('click', (event) => {
@@ -35,36 +33,40 @@ const debounceBinding = (el: HTMLElement, binding: DirectiveBinding) => {
 
       debouncedState = window.setTimeout(() => {
         debouncedState = null
-        if (binding.value instanceof Function) {
-          binding.value(binding.arg)
-        }
+        binding.dispatch()
       }, debounceTime)
     }
   }, true)
 }
 
-const defaultBinding = (el: HTMLElement, binding: DirectiveBinding) => {
+const defaultBinding = (el: HTMLElement, binding: BindingResult) => {
   el.addEventListener('click', (event) => {
-    if (event.isTrusted && binding.value instanceof Function) {
-      binding.value(binding.arg)
+    if (event.isTrusted) {
+      binding.dispatch()
     }
   }, true)
 }
 
 export const ClickDirective: DirectiveOptions = {
   inserted (el, binding) {
-    if (binding.modifiers?.throttle === true) {
-      throttleBinding(el, binding)
-    } else if (binding.modifiers?.debounce === true) {
-      debounceBinding(el, binding)
-    } else {
-      defaultBinding(el, binding)
+    const bindingResult = ParseBinding(binding)
+
+    switch (bindingResult.behavior) {
+      case Behavior.Throttle:
+        throttleBinding(el, bindingResult)
+        break
+      case Behavior.Debounce:
+        debounceBinding(el, bindingResult)
+        break
+      case Behavior.Default:
+        defaultBinding(el, bindingResult)
+        break
     }
   }
 }
 
 export default {
-  install: (Vue: VueConstructor, options: {} = {}) => {
+  install: (Vue: VueConstructor) => {
     Vue.directive('click', ClickDirective)
   }
 }

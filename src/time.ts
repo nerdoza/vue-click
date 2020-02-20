@@ -1,5 +1,11 @@
+const timeSplitRegex = /^(\d+)?(m|s|ms)?$/i
+
+export const IsTime = (arg: string = '') => {
+  return timeSplitRegex.test(arg)
+}
+
 export const TimeParser = (timeString: string = '') => {
-  const match = /^(-?(?:\d+)?\.?\d+)(m|s|ms)?$/i.exec(timeString)
+  const match = timeSplitRegex.exec(timeString)
 
   if (match && match.length >= 3) {
     const numericSegment = parseFloat(match[1])
@@ -11,18 +17,6 @@ export const TimeParser = (timeString: string = '') => {
         return numericSegment * 1000
       case 'ms':
         return numericSegment
-    }
-  }
-
-  return null
-}
-
-export const TimeSearcher = (modifiers: object) => {
-  for (let key in modifiers) {
-    let parsedTime = TimeParser(key)
-
-    if (parsedTime !== null) {
-      return parsedTime
     }
   }
 
