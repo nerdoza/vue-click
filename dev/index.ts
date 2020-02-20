@@ -10,8 +10,18 @@ new Vue({
     count: 0
   },
   methods: {
-    click: function () {
-      this.count++
+    click: function (arg?: string | number | MouseEvent) {
+      let incrementAmount = 1
+
+      if (typeof arg === 'number') {
+        incrementAmount = arg
+      }
+
+      if (typeof arg === 'string') {
+        incrementAmount = parseInt(arg, 10)
+      }
+
+      this.count += incrementAmount
     }
   }
 })

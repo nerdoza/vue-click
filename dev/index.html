@@ -13,6 +13,7 @@
     <p>Click Count: {{ count }}</p>
     <button v-on:click="click">v-on:click</button>
     <button v-click="click">v-click</button>
+    <button v-click:2="click">v-click:2</button>
     <p>Throttle</p>
     <button v-click.throttle="click">v-click.throttle</button>
     <button v-click.throttle.20="click">v-click.throttle.20</button>

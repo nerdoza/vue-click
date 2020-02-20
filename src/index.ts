@@ -9,20 +9,16 @@ const throttleBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   const throttleTime = TimeSearcher(binding.modifiers) ?? defaultThrottleTimeout
   let throttledState: number | null = null
 
-  const setThrottledState = () => {
-    throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
-  }
-
   el.addEventListener('click', (event) => {
     if (event.isTrusted) {
       if (throttledState === null) {
         if (binding.value instanceof Function) {
-          binding.value()
+          binding.value(binding.arg)
         }
       } else {
         clearTimeout(throttledState)
       }
-      setThrottledState()
+      throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
     }
   }, true)
 }
@@ -31,21 +27,18 @@ const debounceBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   const debounceTime = TimeSearcher(binding.modifiers) ?? defaultDebounceTimeout
   let debouncedState: number | null = null
 
-  const setDebouncedState = () => {
-    debouncedState = window.setTimeout(() => {
-      debouncedState = null
-      if (binding.value instanceof Function) {
-        binding.value()
-      }
-    }, debounceTime)
-  }
-
   el.addEventListener('click', (event) => {
     if (event.isTrusted) {
       if (debouncedState !== null) {
         clearTimeout(debouncedState)
       }
-      setDebouncedState()
+
+      debouncedState = window.setTimeout(() => {
+        debouncedState = null
+        if (binding.value instanceof Function) {
+          binding.value(binding.arg)
+        }
+      }, debounceTime)
     }
   }, true)
 }
@@ -53,16 +46,17 @@ const debounceBinding = (el: HTMLElement, binding: DirectiveBinding) => {
 const defaultBinding = (el: HTMLElement, binding: DirectiveBinding) => {
   el.addEventListener('click', (event) => {
     if (event.isTrusted && binding.value instanceof Function) {
-      binding.value()
+      binding.value(binding.arg)
     }
   }, true)
 }
 
 export const ClickDirective: DirectiveOptions = {
   inserted (el, binding) {
+    console.log(binding)
     if (binding.modifiers?.throttle === true) {
       throttleBinding(el, binding)
-    } if (binding.modifiers?.debounce === true) {
+    } else if (binding.modifiers?.debounce === true) {
       debounceBinding(el, binding)
     } else {
       defaultBinding(el, binding)

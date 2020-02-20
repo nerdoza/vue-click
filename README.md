@@ -1,5 +1,5 @@
 # Vue Click
-![Push](https://github.com/bayssmekanique/vue-click/workflows/Push/badge.svg)
+![Publish](https://github.com/bayssmekanique/vue-click/workflows/Publish/badge.svg)
 
 Vue plugin for advanced click directive.
 
@@ -103,6 +103,24 @@ Time modifiers automatically use milliseconds as the default unit of measure, bu
 ```html
 <button v-click.throttle.1s="openModal">
 ```
+
+## Function Call Arguments
+
+When it is necessary to pass an argument to the function triggered on the click event, add the argument to the end of the directive as an argument.
+
+```html
+<button v-click.throttle:open="buttonPress">
+```
+
+```javascript
+buttonPress (arg) {
+  if (arg === 'open') {
+    openModal()
+  }
+}
+```
+
+For the above example, the `buttonPress` function will be called with the string `open` passed in as the argument. There is only support for a single argument and it will always be passed in as a string.
 
 ---
 
