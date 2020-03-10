@@ -4,6 +4,15 @@ import { ParseBinding, Behavior, BindingResult } from './binding'
 
 const defaultThrottleTimeout = 220
 const defaultDebounceTimeout = 300
+const defaultDoubleClickTimeout = 300
+
+const defaultBinding = (el: HTMLElement, binding: BindingResult) => {
+  el.addEventListener('click', (event) => {
+    if (event.isTrusted) {
+      binding.dispatch()
+    }
+  }, { once: binding.once })
+}
 
 const throttleBinding = (el: HTMLElement, binding: BindingResult) => {
   const throttleTime = binding.time ?? defaultThrottleTimeout
@@ -18,7 +27,7 @@ const throttleBinding = (el: HTMLElement, binding: BindingResult) => {
       }
       throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
     }
-  }, true)
+  }, { once: binding.once })
 }
 
 const debounceBinding = (el: HTMLElement, binding: BindingResult) => {
@@ -36,15 +45,34 @@ const debounceBinding = (el: HTMLElement, binding: BindingResult) => {
         binding.dispatch()
       }, debounceTime)
     }
-  }, true)
+  }, { once: binding.once })
 }
 
-const defaultBinding = (el: HTMLElement, binding: BindingResult) => {
-  el.addEventListener('click', (event) => {
+const doubleClickBinding = (el: HTMLElement, binding: BindingResult) => {
+  const doubleClickTimeout = binding.time ?? defaultDoubleClickTimeout
+  let doubleClickState: number | null = null
+
+  const onEvent = (event: MouseEvent) => {
     if (event.isTrusted) {
-      binding.dispatch()
+      if (doubleClickState) {
+        clearTimeout(doubleClickState)
+        doubleClickState = null
+        if (binding.once) {
+          el.removeEventListener('click', onEvent)
+        }
+        binding.dispatch()
+      } else {
+        doubleClickState = window.setTimeout(() => {
+          if (doubleClickState) {
+            clearTimeout(doubleClickState)
+            doubleClickState = null
+          }
+        }, doubleClickTimeout)
+      }
     }
-  }, true)
+  }
+
+  el.addEventListener('click', onEvent)
 }
 
 export const ClickDirective: DirectiveOptions = {
@@ -52,14 +80,17 @@ export const ClickDirective: DirectiveOptions = {
     const bindingResult = ParseBinding(binding)
 
     switch (bindingResult.behavior) {
+      case Behavior.Default:
+        defaultBinding(el, bindingResult)
+        break
       case Behavior.Throttle:
         throttleBinding(el, bindingResult)
         break
       case Behavior.Debounce:
         debounceBinding(el, bindingResult)
         break
-      case Behavior.Default:
-        defaultBinding(el, bindingResult)
+      case Behavior.Double:
+        doubleClickBinding(el, bindingResult)
         break
     }
   }

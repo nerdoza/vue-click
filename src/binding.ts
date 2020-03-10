@@ -3,6 +3,7 @@ import { TimeParser, IsTime } from './time'
 
 export enum Behavior {
   Default = 'default',
+  Double = 'double',
   Throttle = 'throttle',
   Debounce = 'debounce'
 }
@@ -11,6 +12,7 @@ export interface BindingResult {
   behavior: Behavior
   time: number | null
   argument: string | null
+  once: boolean
   dispatch: Function | (() => void)
 }
 
@@ -19,6 +21,7 @@ export const ParseBinding = (binding: DirectiveBinding) => {
     behavior: Behavior.Default,
     time: null,
     argument: null,
+    once: false,
     dispatch: () => { return }
   } as BindingResult
 
@@ -32,6 +35,12 @@ export const ParseBinding = (binding: DirectiveBinding) => {
       result.time = TimeParser(mods[0])
     } else if (Object.values(Behavior).indexOf(mods[0] as Behavior) > 0) {
       result.behavior = mods[0] as Behavior
+    } else {
+      switch (mods[0]) {
+        case 'once':
+          result.once = true
+          break
+      }
     }
   }
 

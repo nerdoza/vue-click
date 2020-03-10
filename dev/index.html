@@ -21,10 +21,20 @@
     <button v-click.debounce="click">v-click.debounce</button>
     <button v-click.debounce.20="click">v-click.debounce.20</button>
     <button v-click.debounce.2s="click">v-click.debounce.2s</button>
+    <p>Double Click</p>
+    <button v-click.double="click">v-click.double</button>
+    <button v-click.double.200="click">v-click.double.200="click"</button>
+    <button v-click.double.2s="click">v-click.double.2s="click"</button>
     <p>Arguments</p>
     <button v-click:2="click">v-click:2</button>
     <button v-click.throttle:3="click">v-click.throttle:3</button>
     <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
+    <p>Mutations</p>
+    <button v-click.once:11="click">v-click.once:11</button>
+    <button v-click.double.once:7="click">v-click.double.once:7</button>
+    <button v-click.throttle.1s.once:10="click">v-click.throttle.1s.once:10</button>
+    <p>Combining</p>
+    <button v-click="click" v-click.double:10="click">v-click="click" v-click.double.10="click"</button>
   </div>
 </body>
 

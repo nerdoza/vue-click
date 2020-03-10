@@ -88,6 +88,20 @@ The default time period is `300ms`, but this can be modify by append the preferr
 <button v-click.debounce.20ms="openModal">
 ```
 
+## Double Modifier
+
+The `v-click` event can be bound to fire only on a double click. The event is fired only after 2 clicks within a time period.
+
+```html
+<button v-click.double="openModal">
+```
+
+The default time period is `300ms`, but this can be modify by append the preferred time to the `double` modifier.
+
+```html
+<button v-click.double.1s="openModal">
+```
+
 ## Time Modifiers
 
 Time modifiers allow overriding of default times by appending the time period to the end of the behavior modifier (ie: `throttle`, `debounce`).
@@ -102,6 +116,14 @@ Time modifiers automatically use milliseconds as the default unit of measure, bu
 
 ```html
 <button v-click.throttle.1s="openModal">
+```
+
+## Once Modifiers
+
+The `once` modifier causes the click listener to only issue a call once. The listener is then disposed. The `once` modifier can be appended to any modifier.
+
+```html
+<button v-click.double.once="openModal">
 ```
 
 ## Function Call Arguments
