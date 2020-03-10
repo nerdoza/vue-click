@@ -1,66 +1,38 @@
 import { DirectiveOptions } from 'vue/types/options'
 import { VueConstructor } from 'vue/types/vue'
-import { ParseBinding, Behavior, BindingResult } from './binding'
+import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
-const defaultThrottleTimeout = 220
-const defaultDebounceTimeout = 300
-const defaultDoubleClickTimeout = 300
+const defaultEventTimeout = 300
 
-const defaultBinding = (el: HTMLElement, binding: BindingResult) => {
-  el.addEventListener('click', (event) => {
+const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const eventCallback = (event: MouseEvent) => {
     if (event.isTrusted) {
-      binding.dispatch()
+      onEvent(() => {
+        el.removeEventListener('click', eventCallback)
+      })
     }
-  }, { once: binding.once })
+  }
+
+  el.addEventListener('click', eventCallback)
+
+  return () => {
+    el.removeEventListener('click', eventCallback)
+  }
 }
 
-const throttleBinding = (el: HTMLElement, binding: BindingResult) => {
-  const throttleTime = binding.time ?? defaultThrottleTimeout
-  let throttledState: number | null = null
-
-  el.addEventListener('click', (event) => {
-    if (event.isTrusted) {
-      if (throttledState === null) {
-        binding.dispatch()
-      } else {
-        clearTimeout(throttledState)
-      }
-      throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
-    }
-  }, { once: binding.once })
-}
-
-const debounceBinding = (el: HTMLElement, binding: BindingResult) => {
-  const debounceTime = binding.time ?? defaultDebounceTimeout
-  let debouncedState: number | null = null
-
-  el.addEventListener('click', (event) => {
-    if (event.isTrusted) {
-      if (debouncedState !== null) {
-        clearTimeout(debouncedState)
-      }
-
-      debouncedState = window.setTimeout(() => {
-        debouncedState = null
-        binding.dispatch()
-      }, debounceTime)
-    }
-  }, { once: binding.once })
-}
-
-const doubleClickBinding = (el: HTMLElement, binding: BindingResult) => {
-  const doubleClickTimeout = binding.time ?? defaultDoubleClickTimeout
+const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const doubleClickTimeout = bindingOptions.time ?? defaultEventTimeout
   let doubleClickState: number | null = null
 
-  const onEvent = (event: MouseEvent) => {
+  const eventCallback = (event: MouseEvent) => {
     if (event.isTrusted) {
       if (doubleClickState) {
         clearTimeout(doubleClickState)
         doubleClickState = null
-        if (binding.once) {
-          el.removeEventListener('click', onEvent)
-        }
-        binding.dispatch()
+
+        onEvent(() => {
+          el.removeEventListener('click', eventCallback)
+        })
       } else {
         doubleClickState = window.setTimeout(() => {
           if (doubleClickState) {
@@ -72,25 +44,69 @@ const doubleClickBinding = (el: HTMLElement, binding: BindingResult) => {
     }
   }
 
-  el.addEventListener('click', onEvent)
+  el.addEventListener('click', eventCallback)
+}
+
+const onceModifier = (bindingOptions: BindingOptions) => {
+  return (removeBinding: ()=> void) => {
+    removeBinding()
+    bindingOptions.dispatch()
+  }
+}
+
+const throttleModifier = (bindingOptions: BindingOptions) => {
+  const throttleTime = bindingOptions.time ?? defaultEventTimeout
+  let throttledState: number | null = null
+
+  return () => {
+      if (throttledState === null) {
+        bindingOptions.dispatch()
+      } else {
+        clearTimeout(throttledState)
+      }
+      throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
+  }
+}
+
+const debounceModifier = (bindingOptions: BindingOptions) => {
+  const debounceTime = bindingOptions.time ?? defaultEventTimeout
+  let debouncedState: number | null = null
+
+  return () => {
+    if (debouncedState !== null) {
+      clearTimeout(debouncedState)
+    }
+
+    debouncedState = window.setTimeout(() => {
+      debouncedState = null
+      bindingOptions.dispatch()
+    }, debounceTime)
+  }
 }
 
 export const ClickDirective: DirectiveOptions = {
   inserted (el, binding) {
-    const bindingResult = ParseBinding(binding)
+    const bindingOptions = ParseBinding(binding)
+    let dispatch: (removeBinding:() => void) => void = () => bindingOptions.dispatch()
 
-    switch (bindingResult.behavior) {
-      case Behavior.Default:
-        defaultBinding(el, bindingResult)
+    switch (bindingOptions.modifier) {
+      case Modifier.Once:
+        dispatch = onceModifier(bindingOptions)
         break
-      case Behavior.Throttle:
-        throttleBinding(el, bindingResult)
-        break
-      case Behavior.Debounce:
-        debounceBinding(el, bindingResult)
+      case Modifier.Throttle:
+        dispatch = throttleModifier(bindingOptions)
+      break
+      case Modifier.Debounce:
+        dispatch = debounceModifier(bindingOptions)
+      break
+    }
+
+    switch (bindingOptions.behavior) {
+      case Behavior.Single:
+        singleBehavior(el, bindingOptions, dispatch)
         break
       case Behavior.Double:
-        doubleClickBinding(el, bindingResult)
+        doubleBehavior(el, bindingOptions, dispatch)
         break
     }
   }

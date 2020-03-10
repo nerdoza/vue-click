@@ -2,14 +2,19 @@ import { DirectiveBinding } from 'vue/types/options'
 import { TimeParser, IsTime } from './time'
 
 export enum Behavior {
-  Default = 'default',
-  Double = 'double',
+  Single = 'single',
+  Double = 'double'
+}
+
+export enum Modifier {
+  Once = 'once',
   Throttle = 'throttle',
   Debounce = 'debounce'
 }
 
-export interface BindingResult {
+export interface BindingOptions {
   behavior: Behavior
+  modifier: Modifier | null
   time: number | null
   argument: string | null
   once: boolean
@@ -18,12 +23,12 @@ export interface BindingResult {
 
 export const ParseBinding = (binding: DirectiveBinding) => {
   const result = {
-    behavior: Behavior.Default,
+    behavior: Behavior.Single,
+    modifier: null,
     time: null,
     argument: null,
-    once: false,
     dispatch: () => { return }
-  } as BindingResult
+  } as BindingOptions
 
   for (let modKey in binding.modifiers) {
     const mods = modKey.split(':')
@@ -33,14 +38,10 @@ export const ParseBinding = (binding: DirectiveBinding) => {
 
     if (IsTime(mods[0])) {
       result.time = TimeParser(mods[0])
-    } else if (Object.values(Behavior).indexOf(mods[0] as Behavior) > 0) {
+    } else if (Object.values(Behavior).indexOf(mods[0] as Behavior) >= 0) {
       result.behavior = mods[0] as Behavior
-    } else {
-      switch (mods[0]) {
-        case 'once':
-          result.once = true
-          break
-      }
+    } else if (Object.values(Modifier).indexOf(mods[0] as Modifier) >= 0) {
+      result.modifier = mods[0] as Modifier
     }
   }
 
