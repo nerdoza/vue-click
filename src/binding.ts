@@ -5,8 +5,8 @@ export enum Behavior {
   Single = 'single',
   Double = 'double',
   Hold = 'hold',
-  Start = 'start',
-  Stop = 'stop'
+  Press = 'press',
+  Release = 'release'
 }
 
 export enum Modifier {

@@ -32,10 +32,38 @@ button, p {
 
 button {
   padding: 0.5rem 1rem;
-  color: rgba(0, 0, 0, 0.80);
+  color: rgba(0, 0, 0, 0.8);
   border: 1px solid rgba(0, 0, 0, 0.2);
-  background-color: #E6E6E6;
+  background-color: rgba(0, 0, 0, 0.05);
   text-decoration: none;
   border-radius: 2px;
   cursor: pointer;
+}
+
+button:focus {
+  outline: none;
+}
+
+button:active {
+  box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.2);
+}
+
+button[data-vc-bind-click] {
+  background-color: aquamarine;
+}
+
+button[data-vc-bind-double] {
+  background-color: aqua;
+}
+
+button[data-vc-bind-hold] {
+  background-color: lightcyan;
+}
+
+button[data-vc-bind-press] {
+  background-color: lavender;
+}
+
+button[data-vc-bind-release] {
+  background-color: lavenderblush;
 }

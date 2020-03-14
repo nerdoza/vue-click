@@ -3,20 +3,25 @@ import { VueConstructor } from 'vue/types/vue'
 import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
 const defaultEventTimeout = 300
+const dataBindingPrefix = 'vcBind'
 
 const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Click'
   const eventCallback = (event: MouseEvent) => {
     if (event.isTrusted) {
       onEvent(() => {
         el.removeEventListener('click', eventCallback)
+        delete(el.dataset[dataBinding])
       })
     }
   }
 
   el.addEventListener('click', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
 const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Double'
   const doubleClickTimeout = bindingOptions.time ?? defaultEventTimeout
   let doubleClickState: number | null = null
 
@@ -28,6 +33,7 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
 
         onEvent(() => {
           el.removeEventListener('click', eventCallback)
+          delete(el.dataset[dataBinding])
         })
       } else {
         doubleClickState = window.setTimeout(() => {
@@ -41,9 +47,11 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
   }
 
   el.addEventListener('click', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
 const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Hold'
   const holdTimeout = bindingOptions.time ?? defaultEventTimeout
   let holdState: number | null = null
 
@@ -54,6 +62,7 @@ const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: 
           onEvent(() => {
             el.removeEventListener('mousedown', eventCallback)
             el.removeEventListener('mouseup', eventCallback)
+            delete(el.dataset[dataBinding])
           })
         }, holdTimeout)
       } else if (event.type === 'mouseup' && holdState) {
@@ -65,30 +74,37 @@ const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: 
 
   el.addEventListener('mousedown', eventCallback)
   el.addEventListener('mouseup', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
-const startBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+const pressBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Press'
   const eventCallback = (event: MouseEvent) => {
     if (event.isTrusted) {
       onEvent(() => {
         el.removeEventListener('mousedown', eventCallback)
+        delete(el.dataset[dataBinding])
       })
     }
   }
 
   el.addEventListener('mousedown', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
-const stopBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+const releaseBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Release'
   const eventCallback = (event: MouseEvent) => {
     if (event.isTrusted) {
       onEvent(() => {
         el.removeEventListener('mouseup', eventCallback)
+        delete(el.dataset[dataBinding])
       })
     }
   }
 
   el.addEventListener('mouseup', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
 const onceModifier = (bindingOptions: BindingOptions) => {
@@ -155,11 +171,11 @@ export const ClickDirective: DirectiveOptions = {
       case Behavior.Hold:
         holdBehavior(el, bindingOptions, dispatch)
         break
-      case Behavior.Start:
-        startBehavior(el, bindingOptions, dispatch)
+      case Behavior.Press:
+        pressBehavior(el, bindingOptions, dispatch)
         break
-      case Behavior.Stop:
-        stopBehavior(el, bindingOptions, dispatch)
+      case Behavior.Release:
+        releaseBehavior(el, bindingOptions, dispatch)
         break
     }
   }

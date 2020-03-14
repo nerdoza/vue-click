@@ -30,14 +30,14 @@
       <button v-click.hold.2s:40="click">v-click.hold.2s:40</button>
     </div>
     <div>
-      <p>Start</p>
-      <button v-click.start="click">v-click.start</button>
-      <button v-click.start.throttle="click">v-click.start.throttle</button>
+      <p>Press</p>
+      <button v-click.press="click">v-click.press</button>
+      <button v-click.press.throttle="click">v-click.press.throttle</button>
     </div>
     <div>
-      <p>Stop</p>
-      <button v-click.stop="click">v-click.stop</button>
-      <button v-click.stop.throttle="click">v-click.stop.throttle</button>
+      <p>Release</p>
+      <button v-click.release="click">v-click.release</button>
+      <button v-click.release.throttle="click">v-click.release.throttle</button>
     </div>
     <div>
       <p>Once</p>
@@ -64,7 +64,7 @@
       <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
     </div>
     <div>
-      <p>Combining</p>
+      <p>Combining (Not Supported)</p>
       <button v-click="click" v-click.double:10="click">v-click v-click.double.10</button>
       <button v-click="click" v-click.hold.1s:100="click">v-click v-click.hold.1s:100</button>
     </div>

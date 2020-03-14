@@ -89,6 +89,36 @@ The default time period is `300ms`, but this can be modify by append the preferr
 <button v-click.double.1s="openModal">
 ```
 
+### Hold Behavior
+
+The `v-click` event can be bound to fire after a specified amount of time that the button is held down.
+
+```html
+<button v-click.hold="openModal">
+```
+
+The default time period is `300ms`, but this can be modify by append the preferred time to the `hold` modifier.
+
+```html
+<button v-click.hold.1s="openModal">
+```
+
+### Press Behavior
+
+The `v-click` event will be fired immediately on the `down` event, regardless of if the `up` event has occurred. This binding can be combined with the `release` behavior for advanced bindings or for scenarios where event latency is very important.
+
+```html
+<button v-click:press="openModal">
+```
+
+### Release Behavior
+
+The `v-click` event will be fired immediately on the `up` event, which will always be preceeded by a `down` event. This binding can be combined with the `press` behavior for advanced bindings or for scenarios where event latency is very important.
+
+```html
+<button v-click:release="openModal">
+```
+
 ## Modifiers
 
 One modifier may be used in a declaration and changes the behavior of the event trigger to reduce unintended event firing.
@@ -164,6 +194,56 @@ buttonPress (arg) {
 ```
 
 For the above example, the `buttonPress` function will be called with the string `open` passed in as the argument. There is only support for a single argument and it will always be passed in as a string.
+
+## Styling
+
+In order to maintain accessibility it is recommended to use the `vue-click` directive on elements which already support `MouseEvent` events to preserve default characteristics such as `focus` and `active` element states (ie: `<button>`, `<a>`). This class does not re-implement those event state via class or data-set bindings as it's recommended to use the built-in event state bindings.
+
+This plugin does provide data-set bindings for the behavior and modifiers to allow advanced styling based on the desired user experience. The behavior data-set bindings can be combined with element states as well.
+
+```css
+button {
+  font-size: 1rem;
+  margin: 1rem;
+  padding: 0.5rem 1rem;
+  color: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+button:focus {
+  outline: none;
+}
+
+button:active {
+  box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.2);
+}
+
+button[data-vc-bind-click] {
+  background-color: aquamarine;
+}
+
+button[data-vc-bind-double] {
+  background-color: aqua;
+}
+
+button[data-vc-bind-hold] {
+  background-color: lightcyan;
+}
+
+button[data-vc-bind-press] {
+  background-color: lavender;
+}
+
+button[data-vc-bind-release] {
+  background-color: lavenderblush;
+}
+```
+
+**Note:** When the `once` modifier is applied, the data-set binding will be removed once the event listener is removed (after the event is fired).
 
 ---
 
