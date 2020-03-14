@@ -10,31 +10,64 @@
 
 <body>
   <div id="app">
-    <p>Click Count: {{ count }}</p>
-    <button v-on:click="click">v-on:click</button>
-    <button v-click="click">v-click</button>
-    <p>Double Click</p>
-    <button v-click.double="click">v-click.double</button>
-    <button v-click.double.200="click">v-click.double.200</button>
-    <button v-click.double.2s="click">v-click.double.2s</button>
-    <p>Once</p>
-    <button v-click.once="click">v-click.once</button>
-    <button v-click.once:1000="click">v-click.once:1000</button>
-    <button v-click.double.once.2s="click">v-click.double.once.2s</button>
-    <p>Throttle</p>
-    <button v-click.throttle="click">v-click.throttle</button>
-    <button v-click.throttle.20="click">v-click.throttle.20</button>
-    <button v-click.throttle.2s="click">v-click.throttle.2s</button>
-    <p>Debounce</p>
-    <button v-click.debounce="click">v-click.debounce</button>
-    <button v-click.debounce.20="click">v-click.debounce.20</button>
-    <button v-click.debounce.2s="click">v-click.debounce.2s</button>
-    <p>Arguments</p>
-    <button v-click:2="click">v-click:2</button>
-    <button v-click.throttle:3="click">v-click.throttle:3</button>
-    <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
-    <p>Combining</p>
-    <button v-click="click" v-click.double:10="click">v-click="click" v-click.double.10="click"</button>
+    <div>
+      <p>Click Count: {{ count }} <button v-click="reset">🔄</button></p>
+    </div>
+    <div>
+      <p>Click</p>
+      <button v-on:click="click">v-on:click</button>
+      <button v-click="click">v-click</button>
+    </div>
+    <div>
+      <p>Double Click</p>
+      <button v-click.double="click">v-click.double</button>
+      <button v-click.double.200="click">v-click.double.200</button>
+      <button v-click.double.2s="click">v-click.double.2s</button>
+    </div>
+    <div>
+      <p>Hold</p>
+      <button v-click.hold="click">v-click.hold</button>
+      <button v-click.hold.2s:40="click">v-click.hold.2s:40</button>
+    </div>
+    <div>
+      <p>Start</p>
+      <button v-click.start="click">v-click.start</button>
+      <button v-click.start.throttle="click">v-click.start.throttle</button>
+    </div>
+    <div>
+      <p>Stop</p>
+      <button v-click.stop="click">v-click.stop</button>
+      <button v-click.stop.throttle="click">v-click.stop.throttle</button>
+    </div>
+    <div>
+      <p>Once</p>
+      <button v-click.once="click">v-click.once</button>
+      <button v-click.once:1000="click">v-click.once:1000</button>
+      <button v-click.double.once.2s="click">v-click.double.once.2s</button>
+    </div>
+    <div>
+      <p>Throttle</p>
+      <button v-click.throttle="click">v-click.throttle</button>
+      <button v-click.throttle.20="click">v-click.throttle.20</button>
+      <button v-click.throttle.2s="click">v-click.throttle.2s</button>
+    </div>
+    <div>
+      <p>Debounce</p>
+      <button v-click.debounce="click">v-click.debounce</button>
+      <button v-click.debounce.20="click">v-click.debounce.20</button>
+      <button v-click.debounce.2s="click">v-click.debounce.2s</button>
+    </div>
+    <div>
+      <p>Arguments</p>
+      <button v-click:2="click">v-click:2</button>
+      <button v-click.throttle:3="click">v-click.throttle:3</button>
+      <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
+    </div>
+    <div>
+      <p>Combining</p>
+      <button v-click="click" v-click.double:10="click">v-click v-click.double.10</button>
+      <button v-click="click" v-click.hold.1s:100="click">v-click v-click.hold.1s:100</button>
+    </div>
   </div>
 </body>
 

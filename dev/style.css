@@ -2,8 +2,30 @@ html, body {
   margin: 0;
 }
 
+#app {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  height: 100vh;
+}
+
+#app > div:first-child > p {
+  font-weight: bold;
+}
+
+#app > div:first-child > p > button {
+  padding: 0;
+  margin: 0;
+  display: inline-block;
+  border: none;
+  background-color: transparent;
+  font-weight: bold;
+}
+
 button, p {
   font-family: "Courier New", Courier, monospace;
+  font-size: 1rem;
   display: block;
   margin: 1rem;
 }
@@ -15,4 +37,5 @@ button {
   background-color: #E6E6E6;
   text-decoration: none;
   border-radius: 2px;
+  cursor: pointer;
 }

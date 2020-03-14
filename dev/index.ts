@@ -22,6 +22,9 @@ new Vue({
       }
 
       this.count += incrementAmount
+    },
+    reset: function(){
+      this.count = 0
     }
   }
 })
