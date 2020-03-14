@@ -3,7 +3,10 @@ import { TimeParser, IsTime } from './time'
 
 export enum Behavior {
   Single = 'single',
-  Double = 'double'
+  Double = 'double',
+  Hold = 'hold',
+  Press = 'press',
+  Release = 'release'
 }
 
 export enum Modifier {

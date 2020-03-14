@@ -3,24 +3,25 @@ import { VueConstructor } from 'vue/types/vue'
 import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
 const defaultEventTimeout = 300
+const dataBindingPrefix = 'vcBind'
 
 const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Click'
   const eventCallback = (event: MouseEvent) => {
     if (event.isTrusted) {
       onEvent(() => {
         el.removeEventListener('click', eventCallback)
+        delete(el.dataset[dataBinding])
       })
     }
   }
 
   el.addEventListener('click', eventCallback)
-
-  return () => {
-    el.removeEventListener('click', eventCallback)
-  }
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
 const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Double'
   const doubleClickTimeout = bindingOptions.time ?? defaultEventTimeout
   let doubleClickState: number | null = null
 
@@ -32,6 +33,7 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
 
         onEvent(() => {
           el.removeEventListener('click', eventCallback)
+          delete(el.dataset[dataBinding])
         })
       } else {
         doubleClickState = window.setTimeout(() => {
@@ -45,10 +47,68 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
   }
 
   el.addEventListener('click', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
+}
+
+const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Hold'
+  const holdTimeout = bindingOptions.time ?? defaultEventTimeout
+  let holdState: number | null = null
+
+  const eventCallback = (event: MouseEvent) => {
+    if (event.isTrusted) {
+      if (event.type === 'mousedown') {
+        holdState = window.setTimeout(() => {
+          onEvent(() => {
+            el.removeEventListener('mousedown', eventCallback)
+            el.removeEventListener('mouseup', eventCallback)
+            delete(el.dataset[dataBinding])
+          })
+        }, holdTimeout)
+      } else if (event.type === 'mouseup' && holdState) {
+        clearTimeout(holdState)
+        holdState = null
+      }
+    }
+  }
+
+  el.addEventListener('mousedown', eventCallback)
+  el.addEventListener('mouseup', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
+}
+
+const pressBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Press'
+  const eventCallback = (event: MouseEvent) => {
+    if (event.isTrusted) {
+      onEvent(() => {
+        el.removeEventListener('mousedown', eventCallback)
+        delete(el.dataset[dataBinding])
+      })
+    }
+  }
+
+  el.addEventListener('mousedown', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
+}
+
+const releaseBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
+  const dataBinding = dataBindingPrefix + 'Release'
+  const eventCallback = (event: MouseEvent) => {
+    if (event.isTrusted) {
+      onEvent(() => {
+        el.removeEventListener('mouseup', eventCallback)
+        delete(el.dataset[dataBinding])
+      })
+    }
+  }
+
+  el.addEventListener('mouseup', eventCallback)
+  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
 const onceModifier = (bindingOptions: BindingOptions) => {
-  return (removeBinding: ()=> void) => {
+  return (removeBinding: () => void) => {
     removeBinding()
     bindingOptions.dispatch()
   }
@@ -59,12 +119,12 @@ const throttleModifier = (bindingOptions: BindingOptions) => {
   let throttledState: number | null = null
 
   return () => {
-      if (throttledState === null) {
-        bindingOptions.dispatch()
-      } else {
-        clearTimeout(throttledState)
-      }
-      throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
+    if (throttledState === null) {
+      bindingOptions.dispatch()
+    } else {
+      clearTimeout(throttledState)
+    }
+    throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
   }
 }
 
@@ -87,7 +147,7 @@ const debounceModifier = (bindingOptions: BindingOptions) => {
 export const ClickDirective: DirectiveOptions = {
   inserted (el, binding) {
     const bindingOptions = ParseBinding(binding)
-    let dispatch: (removeBinding:() => void) => void = () => bindingOptions.dispatch()
+    let dispatch: (removeBinding: () => void) => void = () => bindingOptions.dispatch()
 
     switch (bindingOptions.modifier) {
       case Modifier.Once:
@@ -95,10 +155,10 @@ export const ClickDirective: DirectiveOptions = {
         break
       case Modifier.Throttle:
         dispatch = throttleModifier(bindingOptions)
-      break
+        break
       case Modifier.Debounce:
         dispatch = debounceModifier(bindingOptions)
-      break
+        break
     }
 
     switch (bindingOptions.behavior) {
@@ -107,6 +167,15 @@ export const ClickDirective: DirectiveOptions = {
         break
       case Behavior.Double:
         doubleBehavior(el, bindingOptions, dispatch)
+        break
+      case Behavior.Hold:
+        holdBehavior(el, bindingOptions, dispatch)
+        break
+      case Behavior.Press:
+        pressBehavior(el, bindingOptions, dispatch)
+        break
+      case Behavior.Release:
+        releaseBehavior(el, bindingOptions, dispatch)
         break
     }
   }
