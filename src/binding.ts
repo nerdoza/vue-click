@@ -24,6 +24,10 @@ export interface BindingOptions {
   dispatch: Function | (() => void)
 }
 
+const enumHasValue = (enumerator: object, value: string) => {
+  return Object.keys(enumerator).filter(key => Object(enumerator)[key] === value).length > 0
+}
+
 export const ParseBinding = (binding: DirectiveBinding) => {
   const result = {
     behavior: Behavior.Single,
@@ -41,9 +45,9 @@ export const ParseBinding = (binding: DirectiveBinding) => {
 
     if (IsTime(mods[0])) {
       result.time = TimeParser(mods[0])
-    } else if (Object.values(Behavior).indexOf(mods[0] as Behavior) >= 0) {
+    } else if (enumHasValue(Behavior, mods[0])) {
       result.behavior = mods[0] as Behavior
-    } else if (Object.values(Modifier).indexOf(mods[0] as Modifier) >= 0) {
+    } else if (enumHasValue(Modifier, mods[0])) {
       result.modifier = mods[0] as Modifier
     }
   }
