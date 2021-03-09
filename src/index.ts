@@ -1,5 +1,4 @@
-import { DirectiveOptions } from 'vue/types/options'
-import { VueConstructor } from 'vue/types/vue'
+import { Directive } from 'vue'
 import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
 const defaultEventTimeout = 300
@@ -144,8 +143,8 @@ const debounceModifier = (bindingOptions: BindingOptions) => {
   }
 }
 
-export const ClickDirective: DirectiveOptions = {
-  inserted (el, binding) {
+export const ClickDirective: Directive = {
+  mounted (el, binding) {
     const bindingOptions = ParseBinding(binding)
     let dispatch: (removeBinding: () => void) => void = () => bindingOptions.dispatch()
 
@@ -182,7 +181,7 @@ export const ClickDirective: DirectiveOptions = {
 }
 
 export default {
-  install: (Vue: VueConstructor) => {
-    Vue.directive('click', ClickDirective)
+  install: (app: any, options: any) => {
+    app.directive('click', ClickDirective)
   }
 }

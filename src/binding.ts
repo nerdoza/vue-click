@@ -1,4 +1,4 @@
-import { DirectiveBinding } from 'vue/types/options'
+import { DirectiveBinding } from 'vue'
 import { TimeParser, IsTime } from './time'
 
 export enum Behavior {

@@ -16,7 +16,7 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     alias: {
-      'vue': 'vue/dist/vue.common.js'
+      'vue': 'vue/dist/vue.esm-bundler.js'
     }
   },
   devtool: 'inline-source-map',
