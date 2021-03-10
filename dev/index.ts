@@ -1,16 +1,12 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import VueClick from '../src'
 
-Vue.use(VueClick)
-
-/* tslint:disable:no-unused-expression */
-new Vue({
-  el: '#app',
-  data: {
-    count: 0
+const app = createApp({
+  data() {
+    return { count: 0 }
   },
   methods: {
-    click: function (arg?: string | number | MouseEvent) {
+    click (arg?: string | number | MouseEvent) {
       let incrementAmount = 1
 
       if (typeof arg === 'number') {
@@ -23,9 +19,11 @@ new Vue({
 
       this.count += incrementAmount
     },
-    reset: function(){
+    reset (){
       this.count = 0
     }
   }
 })
-/* tslint:enable:no-unused-expression */
+
+app.use(VueClick)
+app.mount('#app')
