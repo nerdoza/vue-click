@@ -6,7 +6,7 @@ const dataBindingPrefix = 'vcBind'
 
 const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
   const dataBinding = dataBindingPrefix + 'Click'
-  const clickTimeout = bindingOptions.time ?? defaultEventTimeout
+  const clickTimeout = defaultEventTimeout
   let clickState: number | null = null
 
   const eventCallback = (event: MouseEvent | TouchEvent) => {
@@ -47,7 +47,8 @@ const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
 
 const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
   const dataBinding = dataBindingPrefix + 'Double'
-  const clickTimeout = bindingOptions.time ?? defaultEventTimeout
+  const clickTimeout = defaultEventTimeout
+  const doubleClickTimeout = bindingOptions.time ?? defaultEventTimeout
   let clickState: number | null = null
   let clickCount: number = 0
 
@@ -77,7 +78,7 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
               clickState = null
               clickCount = 0
             }
-          }, clickTimeout)
+          }, doubleClickTimeout)
         } else {
           clickCount = 0
           onEvent(() => {
