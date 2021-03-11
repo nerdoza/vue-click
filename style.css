@@ -1,7 +1,7 @@
 html, body {
   margin: 0;
   font-family: "Courier New", Courier, monospace;
-  background: #f8f8ff;
+  background: ghostwhite;
 }
 
 #app {
@@ -36,7 +36,8 @@ html, body {
   font-weight: bold;
 }
 
-button, p {
+p,
+button {
   font-size: 1rem;
   display: block;
   margin: 1rem;
@@ -56,16 +57,23 @@ button {
   -webkit-user-select: none;
   -o-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 button:focus {
   outline: none;
 }
 
-button:active {
+button:active,
+button[data-vc-state-active] {
   outline: none;
-  box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.4);
+}
+
+button[data-vc-state-deactivated] {
+  outline: none;
+  box-shadow: none;
+  background: ghostwhite;
 }
 
 button[data-vc-bind-click] {
