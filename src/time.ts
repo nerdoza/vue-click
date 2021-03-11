@@ -7,10 +7,10 @@ export const IsTime = (arg: string = '') => {
 export const TimeParser = (timeString: string = '') => {
   const match = timeSplitRegex.exec(timeString)
 
-  if (match && match.length >= 3) {
+  if (match !== null && match.length >= 3) {
     const numericSegment = parseFloat(match[1])
 
-    switch ((match[2] || 'ms').toLowerCase()) {
+    switch ((match[2] ?? 'ms').toLowerCase()) {
       case 'm':
         return numericSegment * 60000
       case 's':

@@ -30,22 +30,24 @@
   ],
   "scripts": {
     "build": "webpack --config webpack/prod.config.js",
-    "lint": "eslint",
+    "lint": "eslint .",
     "dev": "webpack serve --config webpack/dev.config.js",
     "start": "npm run dev"
   },
-  "dependencies": {},
+  "dependencies": {
+    "html-webpack-plugin": "^5.3.1"
+  },
   "devDependencies": {
-    "@vue/cli-plugin-eslint": "^4.5.11",
-    "@vue/eslint-config-standard": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.17.0",
+    "@typescript-eslint/parser": "^4.17.0",
     "clean-webpack-plugin": "^3.0.0",
     "dts-bundle": "^0.7.3",
     "eslint": "^7.21.0",
+    "eslint-config-standard-with-typescript": "^20.0.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.3.1",
-    "eslint-plugin-vue": "^7.7.0",
-    "html-webpack-plugin": "^5.3.1",
+    "eslint-plugin-standard": "^5.0.0",
     "ts-loader": "^8.0.17",
     "typescript": "^4.2.3",
     "vue": "^3.0.7",

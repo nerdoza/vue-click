@@ -29,17 +29,18 @@ const enumHasValue = (enumerator: object, value: string) => {
 }
 
 export const ParseBinding = (binding: DirectiveBinding) => {
-  const result = {
+  const result: BindingOptions = {
     behavior: Behavior.Single,
     modifier: null,
     time: null,
     argument: null,
-    dispatch: () => { return }
-  } as BindingOptions
+    once: false,
+    dispatch: () => { }
+  }
 
-  for (let modKey in binding.modifiers) {
+  for (const modKey in binding.modifiers) {
     const mods = modKey.split(':')
-    if (mods[1]) {
+    if (typeof mods[1] !== 'undefined') {
       result.argument = mods[1]
     }
 
@@ -52,7 +53,7 @@ export const ParseBinding = (binding: DirectiveBinding) => {
     }
   }
 
-  if (binding.arg) {
+  if (typeof binding.arg !== 'undefined') {
     result.argument = binding.arg
   }
 

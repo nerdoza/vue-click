@@ -1,16 +1,18 @@
 module.exports = {
-  root: true,
-  env: {
-    node: true
-  },
-  'extends': [
-    'plugin:vue/vue3-essential'
-  ],
+  extends: 'standard-with-typescript',
   parserOptions: {
-    ecmaVersion: 2020
+    ecmaVersion: 2020,
+    project: './tsconfig.json'
   },
+  ignorePatterns: [
+    'dist/**/*'
+  ],
   rules: {
-    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off'
+    'no-void': 'off',
+    'object-curly-spacing': ['error', 'always'],
+    '@typescript-eslint/no-namespace': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/no-dynamic-delete': 'off'
   }
 }

@@ -14,8 +14,11 @@
       <p>Click Count: {{ count }} <button v-click="reset">🔄</button></p>
     </div>
     <div>
-      <p>Click</p>
+      <p>Native Click</p>
       <button v-on:click="click">v-on:click</button>
+    </div>
+    <div>
+      <p>Click</p>
       <button v-click="click">v-click</button>
     </div>
     <div>
@@ -64,9 +67,14 @@
       <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
     </div>
     <div>
-      <p>Combining (Not Supported)</p>
+      <p>Combining (Supported Combos)</p>
+      <button v-click="click" v-click.hold:100="click">v-click v-click.hold:100</button>
+    </div>
+    <div>
+      <p>Combining (Unsupported Combos)</p>
       <button v-click="click" v-click.double:10="click">v-click v-click.double.10</button>
-      <button v-click="click" v-click.hold.1s:100="click">v-click v-click.hold.1s:100</button>
+      <button v-click.release="click" v-click.hold:100="click">v-click.release v-click.hold:100</button>
+      <button v-click.press="click" v-click.hold:100="click">v-click.press v-click.hold:100</button>
     </div>
   </div>
 </body>
