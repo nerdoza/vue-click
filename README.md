@@ -3,6 +3,8 @@
 
 Vue 3 plugin for advanced click directive.
 
+### [🖱️ Demo Page](https://bayssmekanique.github.io/vue-click/)
+
 # Installation
 
 ## Npm
