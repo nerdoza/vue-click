@@ -177,36 +177,29 @@ For the above example, the `buttonPress` function will be called with the string
 
 ## Styling
 
-In order to maintain accessibility it is recommended to use the `vue-click` directive on elements which already support `MouseEvent` events to preserve default characteristics such as `focus` and `active` element states (ie: `<button>`, `<a>`). This class does not re-implement those event state via class or data-set bindings as it's recommended to use the built-in event state bindings.
+The addition of `TouchEvent` support has resulted in the breaking of normal event propagation which means pseudo selectors like `:active` and `:focus` will no longer active on events. Instead, the `data-vc-state-active` data attribute will be applied during the target elements active state. This works better across both mobile and desktop environments than the `:active` state as it's cleared when the user's finger is removed (where `:active` persists until focus is changed). There is also a `data-vc-state-deactivate` data attribute which is applied when the binding is removed from an element (ex: `once` modifier).
 
-This plugin does provide data-set bindings for the behavior and modifiers to allow advanced styling based on the desired user experience. The behavior data-set bindings can be combined with element states as well.
+This plugin also provides data attributes for the behavior to allow advanced styling based on the desired user experience.
 
 ```css
-button {
-  font-size: 1rem;
-  margin: 1rem;
-  padding: 0.5rem 1rem;
-  color: rgba(0, 0, 0, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  background-color: rgba(0, 0, 0, 0.05);
+button,
+button:focus, 
+button:active {
   text-decoration: none;
-  border-radius: 2px;
   cursor: pointer;
   user-select: none;
-  -moz-user-select: none;
-  -khtml-user-select: none;
-  -webkit-user-select: none;
-  -o-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-
-button:focus {
+  touch-action: none;
   outline: none;
 }
 
-button:active {
-  box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.2);
+button[data-vc-state-active] {
+  box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.4);
+}
+
+button[data-vc-state-deactivated] {
+  box-shadow: none;
+  background: ghostwhite;
 }
 
 button[data-vc-bind-click] {
