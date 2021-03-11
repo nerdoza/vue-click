@@ -1,0 +1,89 @@
+html, body {
+  margin: 0;
+  font-family: "Courier New", Courier, monospace;
+  background: #f8f8ff;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  height: 100vh;
+}
+
+#app > div:first-child > h1 {
+  font-size: 2.5rem;
+  display: block;
+  margin: 1rem 1rem 0;
+}
+
+#app > div:first-child > a {
+  font-weight: bold;
+  margin: 0 1rem;
+}
+
+#app > div:first-child > p {
+  font-weight: bold;
+}
+
+#app > div:first-child > p > button {
+  padding: 0;
+  margin: 0;
+  display: inline-block;
+  border: none;
+  background-color: transparent;
+  font-weight: bold;
+}
+
+button, p {
+  font-size: 1rem;
+  display: block;
+  margin: 1rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  color: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:focus {
+  outline: none;
+}
+
+button:active {
+  outline: none;
+  box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.2);
+}
+
+button[data-vc-bind-click] {
+  background-color: aquamarine;
+}
+
+button[data-vc-bind-double] {
+  background-color: aqua;
+}
+
+button[data-vc-bind-hold] {
+  background-color: lightcyan;
+}
+
+button[data-vc-bind-press] {
+  background-color: lavender;
+}
+
+button[data-vc-bind-release] {
+  background-color: lavenderblush;
+}
