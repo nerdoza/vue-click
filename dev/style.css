@@ -1,5 +1,6 @@
 html, body {
   margin: 0;
+  font-family: "Courier New", Courier, monospace;
 }
 
 #app {
@@ -8,6 +9,17 @@ html, body {
   flex-wrap: wrap;
   align-items: flex-start;
   height: 100vh;
+}
+
+#app > div:first-child > h1 {
+  font-size: 2.5rem;
+  display: block;
+  margin: 1rem 1rem 0;
+}
+
+#app > div:first-child > a {
+  font-weight: bold;
+  margin: 0 1rem;
 }
 
 #app > div:first-child > p {
@@ -24,7 +36,6 @@ html, body {
 }
 
 button, p {
-  font-family: "Courier New", Courier, monospace;
   font-size: 1rem;
   display: block;
   margin: 1rem;

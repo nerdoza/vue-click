@@ -5,12 +5,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
-  <title>Vue-Click Test</title>
+  <title>Vue-Click Demo</title>
 </head>
 
 <body>
   <div id="app">
     <div>
+      <h1>Vue-Click Demo</h1>
+      <a href="https://github.com/bayssmekanique/vue-click">GitHub Repo</a>
       <p>Click Count: {{ count }} <button v-click="reset">🔄</button></p>
     </div>
     <div>
@@ -67,11 +69,11 @@
       <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
     </div>
     <div>
-      <p>Combining (Supported Combos)</p>
+      <p>Supported Combos</p>
       <button v-click="click" v-click.hold:100="click">v-click v-click.hold:100</button>
     </div>
     <div>
-      <p>Combining (Unsupported Combos)</p>
+      <p>⚠ Unsupported Combos</p>
       <button v-click="click" v-click.double:10="click">v-click v-click.double.10</button>
       <button v-click.release="click" v-click.hold:100="click">v-click.release v-click.hold:100</button>
       <button v-click.press="click" v-click.hold:100="click">v-click.press v-click.hold:100</button>
