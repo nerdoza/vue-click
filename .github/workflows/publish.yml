@@ -51,7 +51,7 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         uses: JamesIves/github-pages-deploy-action@4.1.0
         with:
-          BRANCH: gh-pages
+          BRANCH: demo
           FOLDER: demo
           CLEAN: true
           COMMIT_MESSAGE: v${{ steps.check.outputs.version }}
