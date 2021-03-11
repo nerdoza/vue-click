@@ -42,6 +42,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Build Demo
+        if: steps.check.outputs.changed == 'true'
+        run: npm run demo
+
+      - name: Push Demo
+        if: steps.check.outputs.changed == 'true'
+        uses: JamesIves/github-pages-deploy-action@releases/v4.1.0
+        with:
+          BRANCH: gh-pages
+          FOLDER: demo
+          CLEAN: true
+          COMMIT_MESSAGE: v${{ steps.check.outputs.version }}
       
       - name: Create Release
         if: steps.check.outputs.changed == 'true'
