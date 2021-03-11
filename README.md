@@ -1,7 +1,7 @@
 # Vue Click
 ![Publish](https://github.com/bayssmekanique/vue-click/workflows/Publish/badge.svg)
 
-Vue plugin for advanced click directive.
+Vue 3 plugin for advanced click directive.
 
 # Installation
 
@@ -14,34 +14,12 @@ npm install --save vue-click
 Install the plugin into Vue:
 
 ```javascript
-import Vue from 'vue'
+import { createApp } from 'vue'
 import VueClick from 'vue-click'
 
-Vue.use(VueClick)
-```
-
-Or use the directive directly within individual components:
-
-```typescript
-import Vue from 'vue'
-import Component from 'vue-class-component'
-import { ClickDirective } from 'vue-click'
-
-@Component({
-  directives: {
-    click: ClickDirective
-  }
-})
-export default class Demo extends Vue {
-  count = 0
-
-  increment() {
-    this.count++
-  }
-}
-
-// Example using Vue Class Component
-// https://class-component.vuejs.org/
+const app = createApp({/* App Config */})
+app.use(VueClick)
+app.mount('#app')
 ```
 
 # Usage
@@ -212,6 +190,13 @@ button {
   text-decoration: none;
   border-radius: 2px;
   cursor: pointer;
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button:focus {
@@ -248,4 +233,4 @@ button[data-vc-bind-release] {
 ---
 
 ## Copyright and License
-© 2020 Zachary Cardoza under the [MIT license](LICENSE.md).
+© 2021 Zachary Cardoza under the [MIT license](LICENSE.md).
