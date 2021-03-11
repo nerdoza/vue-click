@@ -1,9 +1,10 @@
 const fs = require('fs')
 const path = require('path')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+
 const DIST = path.resolve(__dirname, '../dist')
 
-function DtsBundlePlugin(options) { this.options = options }
+function DtsBundlePlugin (options) { this.options = options }
 DtsBundlePlugin.prototype.apply = function (compiler) {
   compiler.hooks.afterEmit.tap('DtsBundlePlugin', () => {
     require('dts-bundle').bundle(this.options)
@@ -24,7 +25,7 @@ DtsBundlePlugin.prototype.apply = function (compiler) {
   })
 }
 
-function replace(file, rules) {
+function replace (file, rules) {
   const src = path.resolve(file)
   let template = fs.readFileSync(src, 'utf8')
 

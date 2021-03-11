@@ -5,7 +5,8 @@ module.exports = {
     project: './tsconfig.json'
   },
   ignorePatterns: [
-    'dist/**/*'
+    'dist/**/*',
+    'demo/**/*'
   ],
   rules: {
     'no-void': 'off',
