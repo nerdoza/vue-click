@@ -1,6 +1,6 @@
 {
   "name": "vue-click",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "private": false,
   "description": "Vue plugin for advanced click directive.",
   "author": "Zachary Cardoza",
