@@ -52,7 +52,9 @@ const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
 
   const eventCallback = (event: MouseEvent | TouchEvent) => {
     if (event.isTrusted) {
-      event.preventDefault()
+      if (event.cancelable) {
+        event.preventDefault()
+      }
 
       if (event.type === 'mousedown' || event.type === 'touchstart') {
         if (clickState !== null) {
@@ -97,7 +99,9 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
 
   const eventCallback = (event: MouseEvent | TouchEvent) => {
     if (event.isTrusted) {
-      event.preventDefault()
+      if (event.cancelable) {
+        event.preventDefault()
+      }
 
       if (event.type === 'mousedown' || event.type === 'touchstart') {
         if (clickState !== null) {
@@ -152,7 +156,9 @@ const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: 
 
   const eventCallback = (event: MouseEvent | TouchEvent) => {
     if (event.isTrusted) {
-      event.preventDefault()
+      if (event.cancelable) {
+        event.preventDefault()
+      }
 
       if (event.type === 'mousedown' || event.type === 'touchstart') {
         holdState = window.setTimeout(() => {
@@ -184,7 +190,9 @@ const pressBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent:
   const dataBinding = dataBindingPrefix + dataBindPressPostfix
   const eventCallback = (event: MouseEvent | TouchEvent) => {
     if (event.isTrusted) {
-      event.preventDefault()
+      if (event.cancelable) {
+        event.preventDefault()
+      }
 
       onEvent(() => {
         unbindClasses()
@@ -205,7 +213,9 @@ const releaseBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEven
   const dataBinding = dataBindingPrefix + dataBindReleasePostfix
   const eventCallback = (event: MouseEvent | TouchEvent) => {
     if (event.isTrusted) {
-      event.preventDefault()
+      if (event.cancelable) {
+        event.preventDefault()
+      }
 
       onEvent(() => {
         unbindClasses()

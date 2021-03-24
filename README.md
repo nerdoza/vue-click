@@ -88,15 +88,15 @@ The default time period is `300ms`, but this can be modify by append the preferr
 The `v-click` event will be fired immediately on the `down` event, regardless of if the `up` event has occurred. This binding can be combined with the `release` behavior for advanced bindings or for scenarios where event latency is very important.
 
 ```html
-<button v-click:press="openModal">
+<button v-click.press="openModal">
 ```
 
 ### Release Behavior
 
-The `v-click` event will be fired immediately on the `up` event, which will always be preceeded by a `down` event. This binding can be combined with the `press` behavior for advanced bindings or for scenarios where event latency is very important.
+The `v-click` event will be fired immediately on the `up` event, which will always be preceded by a `down` event. This binding can be combined with the `press` behavior for advanced bindings or for scenarios where event latency is very important.
 
 ```html
-<button v-click:release="openModal">
+<button v-click.release="openModal">
 ```
 
 ## Modifiers
