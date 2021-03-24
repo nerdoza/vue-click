@@ -72,6 +72,10 @@
       <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
     </div>
     <div>
+      <p>Disabled</p>
+      <button disabled="true" v-click="click">disabled v-click</button>
+    </div>
+    <div>
       <p>Supported Combos</p>
       <button v-click="click" v-click.hold:100="click">v-click v-click.hold:100</button>
     </div>
