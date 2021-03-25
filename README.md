@@ -182,24 +182,30 @@ The addition of `TouchEvent` support has resulted in the breaking of normal even
 This plugin also provides data attributes for the behavior to allow advanced styling based on the desired user experience.
 
 ```css
-button,
-button:focus, 
-button:active {
+button {
   text-decoration: none;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
+}
+
+button:focus {
   outline: none;
 }
 
+button:active,
 button[data-vc-state-active] {
+  outline: none;
   box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.4);
 }
 
+button:disabled,
 button[data-vc-state-deactivated] {
+  background: ghostwhite !important;
+  cursor: inherit;
+  outline: none;
   box-shadow: none;
-  background: ghostwhite;
 }
 
 button[data-vc-bind-click] {
@@ -216,10 +222,6 @@ button[data-vc-bind-hold] {
 
 button[data-vc-bind-press] {
   background-color: lavender;
-}
-
-button[data-vc-bind-release] {
-  background-color: lavenderblush;
 }
 ```
 
