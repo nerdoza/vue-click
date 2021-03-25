@@ -70,10 +70,12 @@ button[data-vc-state-active] {
   box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.4);
 }
 
+button:disabled,
 button[data-vc-state-deactivated] {
+  background: ghostwhite !important;
+  cursor: inherit;
   outline: none;
   box-shadow: none;
-  background: ghostwhite;
 }
 
 button[data-vc-bind-click] {
