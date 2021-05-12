@@ -286,21 +286,27 @@ export const ClickDirective: Directive = {
         break
     }
 
+    const disableableDispatch: (removeBinding: () => void) => void = (removeBinding) => {
+      if (el.disabled !== true) {
+        dispatch(removeBinding)
+      }
+    }
+
     switch (bindingOptions.behavior) {
       case Behavior.Single:
-        singleBehavior(el, bindingOptions, dispatch)
+        singleBehavior(el, bindingOptions, disableableDispatch)
         break
       case Behavior.Double:
-        doubleBehavior(el, bindingOptions, dispatch)
+        doubleBehavior(el, bindingOptions, disableableDispatch)
         break
       case Behavior.Hold:
-        holdBehavior(el, bindingOptions, dispatch)
+        holdBehavior(el, bindingOptions, disableableDispatch)
         break
       case Behavior.Press:
-        pressBehavior(el, bindingOptions, dispatch)
+        pressBehavior(el, bindingOptions, disableableDispatch)
         break
       case Behavior.Release:
-        releaseBehavior(el, bindingOptions, dispatch)
+        releaseBehavior(el, bindingOptions, disableableDispatch)
         break
     }
   }
