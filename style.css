@@ -2,6 +2,8 @@ html, body {
   margin: 0;
   font-family: "Courier New", Courier, monospace;
   background: ghostwhite;
+  height: 100%;
+  width: 100%;
 }
 
 #app {
@@ -9,7 +11,8 @@ html, body {
   flex-direction: column;
   flex-wrap: wrap;
   align-items: flex-start;
-  height: 100vh;
+  height: 100%;
+  width: 50%;
 }
 
 #app > div:first-child > h1 {
