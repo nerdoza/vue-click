@@ -12,6 +12,15 @@ const dataStatePrefix = 'vcState'
 const dataStateActivePostfix = 'Active'
 const dataStateDeactivatedPostfix = 'Deactivated'
 
+/**
+ * @summary `eventOptions` will evaluate as `true` on older browsers, which is consistent behavior so no polyfill is required.
+ * @see https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+ */
+const eventOptions: AddEventListenerOptions = {
+  capture: true,
+  passive: false
+}
+
 const bindClassStates = (el: HTMLElement) => {
   if (
     typeof el.dataset[dataBindingPrefix + dataBindClickPostfix] !== 'undefined' ||
@@ -31,16 +40,16 @@ const bindClassStates = (el: HTMLElement) => {
     }
   }
 
-  el.addEventListener('touchstart', eventCallback)
-  el.addEventListener('touchend', eventCallback)
-  el.addEventListener('mousedown', eventCallback)
-  el.addEventListener('mouseup', eventCallback)
+  el.addEventListener('touchstart', eventCallback, eventOptions)
+  el.addEventListener('touchend', eventCallback, eventOptions)
+  el.addEventListener('mousedown', eventCallback, eventOptions)
+  el.addEventListener('mouseup', eventCallback, eventOptions)
 
   return () => {
-    el.removeEventListener('touchstart', eventCallback)
-    el.removeEventListener('touchend', eventCallback)
-    el.removeEventListener('mousedown', eventCallback)
-    el.removeEventListener('mouseup', eventCallback)
+    el.removeEventListener('touchstart', eventCallback, eventOptions)
+    el.removeEventListener('touchend', eventCallback, eventOptions)
+    el.removeEventListener('mousedown', eventCallback, eventOptions)
+    el.removeEventListener('mouseup', eventCallback, eventOptions)
     el.dataset[dataStatePrefix + dataStateDeactivatedPostfix] = ''
   }
 }
@@ -72,10 +81,10 @@ const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
 
         onEvent(() => {
           unbindClasses()
-          el.removeEventListener('touchstart', eventCallback)
-          el.removeEventListener('touchend', eventCallback)
-          el.removeEventListener('mousedown', eventCallback)
-          el.removeEventListener('mouseup', eventCallback)
+          el.removeEventListener('touchstart', eventCallback, eventOptions)
+          el.removeEventListener('touchend', eventCallback, eventOptions)
+          el.removeEventListener('mousedown', eventCallback, eventOptions)
+          el.removeEventListener('mouseup', eventCallback, eventOptions)
           delete (el.dataset[dataBinding])
         })
       }
@@ -83,10 +92,10 @@ const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
   }
 
   const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback)
-  el.addEventListener('touchend', eventCallback)
-  el.addEventListener('mousedown', eventCallback)
-  el.addEventListener('mouseup', eventCallback)
+  el.addEventListener('touchstart', eventCallback, eventOptions)
+  el.addEventListener('touchend', eventCallback, eventOptions)
+  el.addEventListener('mousedown', eventCallback, eventOptions)
+  el.addEventListener('mouseup', eventCallback, eventOptions)
   el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
@@ -130,10 +139,10 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
           clickCount = 0
           onEvent(() => {
             unbindClasses()
-            el.removeEventListener('touchstart', eventCallback)
-            el.removeEventListener('touchend', eventCallback)
-            el.removeEventListener('mousedown', eventCallback)
-            el.removeEventListener('mouseup', eventCallback)
+            el.removeEventListener('touchstart', eventCallback, eventOptions)
+            el.removeEventListener('touchend', eventCallback, eventOptions)
+            el.removeEventListener('mousedown', eventCallback, eventOptions)
+            el.removeEventListener('mouseup', eventCallback, eventOptions)
             delete (el.dataset[dataBinding])
           })
         }
@@ -142,10 +151,10 @@ const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent
   }
 
   const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback)
-  el.addEventListener('touchend', eventCallback)
-  el.addEventListener('mousedown', eventCallback)
-  el.addEventListener('mouseup', eventCallback)
+  el.addEventListener('touchstart', eventCallback, eventOptions)
+  el.addEventListener('touchend', eventCallback, eventOptions)
+  el.addEventListener('mousedown', eventCallback, eventOptions)
+  el.addEventListener('mouseup', eventCallback, eventOptions)
   el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
@@ -164,10 +173,10 @@ const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: 
         holdState = window.setTimeout(() => {
           onEvent(() => {
             unbindClasses()
-            el.removeEventListener('touchstart', eventCallback)
-            el.removeEventListener('touchend', eventCallback)
-            el.removeEventListener('mousedown', eventCallback)
-            el.removeEventListener('mouseup', eventCallback)
+            el.removeEventListener('touchstart', eventCallback, eventOptions)
+            el.removeEventListener('touchend', eventCallback, eventOptions)
+            el.removeEventListener('mousedown', eventCallback, eventOptions)
+            el.removeEventListener('mouseup', eventCallback, eventOptions)
             delete (el.dataset[dataBinding])
           })
         }, holdTimeout)
@@ -179,10 +188,10 @@ const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: 
   }
 
   const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback)
-  el.addEventListener('touchend', eventCallback)
-  el.addEventListener('mousedown', eventCallback)
-  el.addEventListener('mouseup', eventCallback)
+  el.addEventListener('touchstart', eventCallback, eventOptions)
+  el.addEventListener('touchend', eventCallback, eventOptions)
+  el.addEventListener('mousedown', eventCallback, eventOptions)
+  el.addEventListener('mouseup', eventCallback, eventOptions)
   el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
@@ -196,16 +205,16 @@ const pressBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent:
 
       onEvent(() => {
         unbindClasses()
-        el.removeEventListener('touchend', eventCallback)
-        el.removeEventListener('mousedown', eventCallback)
+        el.removeEventListener('touchend', eventCallback, eventOptions)
+        el.removeEventListener('mousedown', eventCallback, eventOptions)
         delete (el.dataset[dataBinding])
       })
     }
   }
 
   const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback)
-  el.addEventListener('mousedown', eventCallback)
+  el.addEventListener('touchstart', eventCallback, eventOptions)
+  el.addEventListener('mousedown', eventCallback, eventOptions)
   el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
@@ -219,16 +228,16 @@ const releaseBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEven
 
       onEvent(() => {
         unbindClasses()
-        el.removeEventListener('touchend', eventCallback)
-        el.removeEventListener('mouseup', eventCallback)
+        el.removeEventListener('touchend', eventCallback, eventOptions)
+        el.removeEventListener('mouseup', eventCallback, eventOptions)
         delete (el.dataset[dataBinding])
       })
     }
   }
 
   const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchend', eventCallback)
-  el.addEventListener('mouseup', eventCallback)
+  el.addEventListener('touchend', eventCallback, eventOptions)
+  el.addEventListener('mouseup', eventCallback, eventOptions)
   el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
