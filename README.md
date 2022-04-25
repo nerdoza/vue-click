@@ -24,6 +24,21 @@ app.use(VueClick)
 app.mount('#app')
 ```
 
+## CDN
+
+This package is available from the [**JSDELIVR**](https://www.jsdelivr.com/) and [**UNPKG**](https://unpkg.com/) content delivery networks (CDNs) and utilizes the [**UMD**](https://github.com/umdjs/umd#readme) module system so it's ready to use directly in the browser without a build step.
+
+```html
+<script src="https://unpkg.com/vue@next"></script>
+<script src="https://unpkg.com/vue-click@latest"></script>
+<script>
+  const app = Vue.createApp({/* App Config */})
+  app.use(VueClick.default)
+  app.mount('#app')
+</script>
+  
+```
+
 # Usage
 
 ## Directive
@@ -230,4 +245,4 @@ button[data-vc-bind-press] {
 ---
 
 ## Copyright and License
-© 2021 Zachary Cardoza under the [MIT license](LICENSE.md).
+© 2022 Zachary Cardoza under the [MIT license](LICENSE.md).
