@@ -68,6 +68,7 @@ module.exports = {
     })
   ],
   output: {
+    hashFunction: 'xxhash64',
     filename: 'index.js',
     path: DIST,
     libraryTarget: 'umd',

@@ -2,7 +2,7 @@ module.exports = {
   extends: 'standard-with-typescript',
   parserOptions: {
     ecmaVersion: 2020,
-    project: './tsconfig.json'
+    project: './tsconfig.eslint.json'
   },
   ignorePatterns: [
     'dist/**/*',

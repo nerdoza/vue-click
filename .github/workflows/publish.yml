@@ -11,12 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
 
-      - name: Use Node.js v12
-        uses: actions/setup-node@v1
+      - name: Use Node.js v19
+        uses: actions/setup-node@v3
         with:
-          node-version: 12
+          node-version: 19
+          cache: 'npm'
 
       - name: Check if version has been updated 
         id: check
@@ -38,7 +39,7 @@ jobs:
 
       - name: Publish to NPM
         if: steps.check.outputs.changed == 'true'
-        uses: primer/publish@v2.0.0
+        uses: primer/publish@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -49,7 +50,7 @@ jobs:
 
       - name: Push Demo
         if: steps.check.outputs.changed == 'true'
-        uses: JamesIves/github-pages-deploy-action@4.1.0
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           BRANCH: demo
           FOLDER: demo

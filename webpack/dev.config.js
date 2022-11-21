@@ -22,7 +22,9 @@ module.exports = {
   devtool: 'inline-source-map',
   devServer: {
     host: '0.0.0.0',
-    contentBase: './dev',
+    static: {
+      directory: './dev'
+    },
     hot: true
   },
   plugins: [
@@ -32,6 +34,7 @@ module.exports = {
     new webpack.HotModuleReplacementPlugin()
   ],
   output: {
+    hashFunction: 'xxhash64',
     filename: 'index.js'
   }
 }

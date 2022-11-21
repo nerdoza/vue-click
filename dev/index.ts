@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import VueClick from '../src'
 
 const app = createApp({
-  data() {
+  data () {
     return { count: 0 }
   },
   methods: {
@@ -17,9 +17,9 @@ const app = createApp({
         incrementAmount = parseInt(arg, 10)
       }
 
-      this.count += incrementAmount
+      (this.count as number) += incrementAmount
     },
-    reset (){
+    reset () {
       this.count = 0
     }
   }
