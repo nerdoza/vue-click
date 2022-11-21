@@ -39,7 +39,7 @@ jobs:
 
       - name: Publish to NPM
         if: steps.check.outputs.changed == 'true'
-        uses: primer/publish@v3
+        uses: primer/publish@v2.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
