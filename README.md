@@ -1,9 +1,9 @@
 # Vue Click
-![Publish](https://github.com/bayssmekanique/vue-click/workflows/Publish/badge.svg)
+![Publish](https://github.com/nerdoza/vue-click/workflows/Publish/badge.svg)
 
 Vue 3 plugin for advanced click directive.
 
-### [🖱️ Demo Page](https://bayssmekanique.github.io/vue-click/)
+### [🖱️ Demo Page](https://nerdoza.github.io/vue-click/)
 
 # Installation
 

@@ -1,1 +1,75 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Ctext%20x='0'%20y='14'%3E🖱️%3C/text%3E%3C/svg%3E" type="image/svg+xml"/><link rel="stylesheet" href="style.css"><title>Vue-Click Demo</title><script defer="defer" src="index.js"></script></head><body><div id="app"><div><h1>Vue-Click Demo</h1><a href="https://github.com/bayssmekanique/vue-click">GitHub Repo</a><p>Click Count: {{ count }} <button v-click="reset">🔄</button></p></div><div><p>Native Click</p><button v-on:click="click">v-on:click</button></div><div><p>Click</p><button v-click="click">v-click</button></div><div><p>Double Click</p><button v-click.double="click">v-click.double</button> <button v-click.double.200="click">v-click.double.200</button> <button v-click.double.2s="click">v-click.double.2s</button></div><div><p>Hold</p><button v-click.hold="click">v-click.hold</button> <button v-click.hold.2s:40="click">v-click.hold.2s:40</button></div><div><p>Press</p><button v-click.press="click">v-click.press</button> <button v-click.press.throttle="click">v-click.press.throttle</button></div><div><p>Release</p><button v-click.release="click">v-click.release</button> <button v-click.release.throttle="click">v-click.release.throttle</button></div><div><p>Once</p><button v-click.once="click">v-click.once</button> <button v-click.once:1000="click">v-click.once:1000</button> <button v-click.double.once.2s="click">v-click.double.once.2s</button></div><div><p>Throttle</p><button v-click.throttle="click">v-click.throttle</button> <button v-click.throttle.20="click">v-click.throttle.20</button> <button v-click.throttle.2s="click">v-click.throttle.2s</button></div><div><p>Debounce</p><button v-click.debounce="click">v-click.debounce</button> <button v-click.debounce.20="click">v-click.debounce.20</button> <button v-click.debounce.2s="click">v-click.debounce.2s</button></div><div><p>Arguments</p><button v-click:2="click">v-click:2</button> <button v-click.throttle:3="click">v-click.throttle:3</button> <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button></div><div><p>Supported Combos</p><button v-click="click" v-click.hold:100="click">v-click v-click.hold:100</button></div><div><p>⚠ Unsupported Combos</p><button v-click="click" v-click.double:10="click">v-click v-click.double.10</button> <button v-click.release="click" v-click.hold:100="click">v-click.release v-click.hold:100</button> <button v-click.press="click" v-click.hold:100="click">v-click.press v-click.hold:100</button></div></div></body></html>
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Ctext%20x='0'%20y='14'%3E🖱️%3C/text%3E%3C/svg%3E"
+    type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css">
+  <title>Vue-Click Demo</title>
+  <script defer="defer" src="index.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div>
+      <h1>Vue-Click Demo</h1><a href="https://github.com/nerdoza/vue-click">GitHub Repo</a>
+      <p>Click Count: {{ count }} <button v-click="reset">🔄</button></p>
+    </div>
+    <div>
+      <p>Native Click</p><button v-on:click="click">v-on:click</button>
+    </div>
+    <div>
+      <p>Click</p><button v-click="click">v-click</button>
+    </div>
+    <div>
+      <p>Double Click</p><button v-click.double="click">v-click.double</button> <button
+        v-click.double.200="click">v-click.double.200</button> <button
+        v-click.double.2s="click">v-click.double.2s</button>
+    </div>
+    <div>
+      <p>Hold</p><button v-click.hold="click">v-click.hold</button> <button
+        v-click.hold.2s:40="click">v-click.hold.2s:40</button>
+    </div>
+    <div>
+      <p>Press</p><button v-click.press="click">v-click.press</button> <button
+        v-click.press.throttle="click">v-click.press.throttle</button>
+    </div>
+    <div>
+      <p>Release</p><button v-click.release="click">v-click.release</button> <button
+        v-click.release.throttle="click">v-click.release.throttle</button>
+    </div>
+    <div>
+      <p>Once</p><button v-click.once="click">v-click.once</button> <button
+        v-click.once:1000="click">v-click.once:1000</button> <button
+        v-click.double.once.2s="click">v-click.double.once.2s</button>
+    </div>
+    <div>
+      <p>Throttle</p><button v-click.throttle="click">v-click.throttle</button> <button
+        v-click.throttle.20="click">v-click.throttle.20</button> <button
+        v-click.throttle.2s="click">v-click.throttle.2s</button>
+    </div>
+    <div>
+      <p>Debounce</p><button v-click.debounce="click">v-click.debounce</button> <button
+        v-click.debounce.20="click">v-click.debounce.20</button> <button
+        v-click.debounce.2s="click">v-click.debounce.2s</button>
+    </div>
+    <div>
+      <p>Arguments</p><button v-click:2="click">v-click:2</button> <button
+        v-click.throttle:3="click">v-click.throttle:3</button> <button
+        v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
+    </div>
+    <div>
+      <p>Supported Combos</p><button v-click="click" v-click.hold:100="click">v-click v-click.hold:100</button>
+    </div>
+    <div>
+      <p>⚠ Unsupported Combos</p><button v-click="click" v-click.double:10="click">v-click v-click.double.10</button>
+      <button v-click.release="click" v-click.hold:100="click">v-click.release v-click.hold:100</button> <button
+        v-click.press="click" v-click.hold:100="click">v-click.press v-click.hold:100</button>
+    </div>
+  </div>
+</body>
+
+</html>
