@@ -39,9 +39,8 @@ jobs:
 
       - name: Publish to NPM
         if: steps.check.outputs.changed == 'true'
-        uses: primer/publish@v3.0.0
+        run: npm publish --provenance --access public
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Build Demo
