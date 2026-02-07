@@ -5,6 +5,6 @@
     "eamodio.gitlens",
     "eg2.vscode-npm-script",
     "dbaeumer.vscode-eslint",
-    "pflannery.vscode-versionlens"
+    "legalfina.npm-version-lens"
   ]
 }
