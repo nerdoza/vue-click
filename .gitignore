@@ -23,3 +23,8 @@ dist/*
 
 # Keep gitkeep files
 !.gitkeep
+
+# Playwright output
+test-results/
+playwright-report/
+blob-report/
