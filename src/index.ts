@@ -4,6 +4,8 @@ import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 const defaultEventTimeout = 300
 /** How far (in CSS pixels) a pointer may travel from where it pressed before the gesture is cancelled. */
 const defaultMoveTolerance = 10
+/** How long (in ms) after pointer input on an element a `click` on it counts as that pointer's own click. */
+const pointerClickGuard = 600
 const dataBindingPrefix = 'vcBind'
 const dataBindPostfixes: Record<Behavior, string> = {
   [Behavior.Single]: 'Click',
@@ -69,6 +71,8 @@ const createTimer = (): Timer => {
 }
 
 interface PressTracker {
+  /** Whether a pointer is pressing `el`, or pressed or released it within `pointerClickGuard`. */
+  recentlyPressed: () => boolean
   teardown: Teardown
 }
 
@@ -80,6 +84,7 @@ interface PressTracker {
 const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: boolean) => void, preventDefault = true): PressTracker => {
   let press: { x: number, y: number, touchId: number | null } | null = null
   let unlistenWindow: Teardown = () => {}
+  let lastPointerAt = 0
 
   const accept = (event: Event) => {
     if (!event.isTrusted) {
@@ -88,6 +93,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
     if (preventDefault && event.cancelable) {
       event.preventDefault()
     }
+    lastPointerAt = Date.now()
     return true
   }
 
@@ -204,6 +210,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   ]
 
   return {
+    recentlyPressed: () => press !== null || Date.now() - lastPointerAt < pointerClickGuard,
     teardown: () => {
       unlistenElement.forEach(unlisten => unlisten())
       finish(false)
@@ -239,9 +246,17 @@ const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
     }
   })
 
+  // Keyboard and assistive-tech activation reach the element as a `click` with no pointer press before it.
+  const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
+    if (event.isTrusted && !tracker.recentlyPressed()) {
+      fire()
+    }
+  })
+
   return () => {
     tracker.teardown()
     clickTimer.clear()
+    unlistenClick()
   }
 }
 
