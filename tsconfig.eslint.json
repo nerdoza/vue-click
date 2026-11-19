@@ -3,6 +3,8 @@
   "include": [
     "./src/**/*",
     "./dev/**/*",
+    "./tests/**/*",
+    "./playwright.config.ts",
     "./node_modules/@types"
   ],
   "exclude": [
