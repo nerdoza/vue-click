@@ -33,6 +33,15 @@ const passiveEventOptions: AddEventListenerOptions = {
   passive: true
 }
 
+/**
+ * macOS and iPadOS treat Control + click as the secondary (context-menu) click. Chrome and Safari still report it as
+ * `button` 0 with `ctrlKey` set, so it has to be told apart from a primary click by platform.
+ */
+const controlClickIsSecondary = () => /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+
+/** The primary mouse button, unless the platform reads this press as a secondary click. */
+const isPrimaryButton = (event: MouseEvent) => event.button === 0 && !(event.ctrlKey && controlClickIsSecondary())
+
 type Teardown = () => void
 type Fire = () => void
 type BehaviorBinder = (el: HTMLElement, bindingOptions: BindingOptions, fire: Fire) => Teardown
@@ -188,7 +197,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   }
 
   const onMouseDown = (event: MouseEvent) => {
-    if (!accept(event) || event.button !== 0) {
+    if (!accept(event) || !isPrimaryButton(event)) {
       return
     }
 
@@ -218,7 +227,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   }
 }
 
-const isPrimaryInput = (event: MouseEvent | TouchEvent) => !('button' in event) || event.button === 0
+const isPrimaryInput = (event: MouseEvent | TouchEvent) => !('button' in event) || isPrimaryButton(event)
 
 const bindActiveState = (el: HTMLElement): ((deactivate: boolean) => void) => {
   if (Object.values(dataBindPostfixes).some(postfix => typeof el.dataset[dataBindingPrefix + postfix] !== 'undefined')) {
