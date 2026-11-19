@@ -2,12 +2,16 @@ import { Directive } from 'vue'
 import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
 const defaultEventTimeout = 300
+/** How far (in CSS pixels) a pointer may travel from where it pressed before the gesture is cancelled. */
+const defaultMoveTolerance = 10
 const dataBindingPrefix = 'vcBind'
-const dataBindClickPostfix = 'Click'
-const dataBindDoublePostfix = 'Double'
-const dataBindHoldPostfix = 'Hold'
-const dataBindPressPostfix = 'Press'
-const dataBindReleasePostfix = 'Release'
+const dataBindPostfixes: Record<Behavior, string> = {
+  [Behavior.Single]: 'Click',
+  [Behavior.Double]: 'Double',
+  [Behavior.Hold]: 'Hold',
+  [Behavior.Press]: 'Press',
+  [Behavior.Release]: 'Release'
+}
 const dataStatePrefix = 'vcState'
 const dataStateActivePostfix = 'Active'
 const dataStateDeactivatedPostfix = 'Deactivated'
@@ -21,224 +25,284 @@ const eventOptions: AddEventListenerOptions = {
   passive: false
 }
 
-const bindClassStates = (el: HTMLElement) => {
-  if (
-    typeof el.dataset[dataBindingPrefix + dataBindClickPostfix] !== 'undefined' ||
-     typeof el.dataset[dataBindingPrefix + dataBindDoublePostfix] !== 'undefined' ||
-     typeof el.dataset[dataBindingPrefix + dataBindHoldPostfix] !== 'undefined' ||
-     typeof el.dataset[dataBindingPrefix + dataBindPressPostfix] !== 'undefined' ||
-     typeof el.dataset[dataBindingPrefix + dataBindReleasePostfix] !== 'undefined'
-  ) {
+/** For listeners that never cancel their event, so they don't hold up scrolling. */
+const passiveEventOptions: AddEventListenerOptions = {
+  capture: true,
+  passive: true
+}
+
+type Teardown = () => void
+type Fire = () => void
+type BehaviorBinder = (el: HTMLElement, bindingOptions: BindingOptions, fire: Fire) => Teardown
+
+const listen = <E extends Event>(target: EventTarget, types: string[], listener: (event: E) => void, options = eventOptions): Teardown => {
+  types.forEach(type => target.addEventListener(type, listener as EventListener, options))
+  return () => types.forEach(type => target.removeEventListener(type, listener as EventListener, options))
+}
+
+interface Timer {
+  pending: () => boolean
+  start: (time: number, callback?: () => void) => void
+  clear: () => void
+}
+
+const createTimer = (): Timer => {
+  let timeout: number | null = null
+  const clear = () => {
+    if (timeout !== null) {
+      clearTimeout(timeout)
+      timeout = null
+    }
+  }
+
+  return {
+    pending: () => timeout !== null,
+    start: (time, callback) => {
+      clear()
+      timeout = window.setTimeout(() => {
+        timeout = null
+        callback?.()
+      }, time)
+    },
+    clear
+  }
+}
+
+interface PressTracker {
+  teardown: Teardown
+}
+
+/**
+ * Follows one press of the primary mouse button or of a single finger on `el`. `onEnd(true)` means the press was
+ * released on `el` without straying past `defaultMoveTolerance`; `onEnd(false)` means it was cancelled instead: moved
+ * too far, released elsewhere, interrupted by `touchcancel` or another touch on `el`, or torn down.
+ */
+const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: boolean) => void, preventDefault = true): PressTracker => {
+  let press: { x: number, y: number, touchId: number | null } | null = null
+  let unlistenWindow: Teardown = () => {}
+
+  const accept = (event: Event) => {
+    if (!event.isTrusted) {
+      return false
+    }
+    if (preventDefault && event.cancelable) {
+      event.preventDefault()
+    }
+    return true
+  }
+
+  const begin = (x: number, y: number, touchId: number | null) => {
+    press = { x, y, touchId }
+    onStart()
+  }
+
+  const finish = (released: boolean) => {
+    if (press !== null) {
+      press = null
+      unlistenWindow()
+      unlistenWindow = () => {}
+      onEnd(released)
+    }
+  }
+
+  const movedTooFar = (x: number, y: number) => {
+    if (press === null) {
+      return false
+    }
+    const dx = x - press.x
+    const dy = y - press.y
+    return dx * dx + dy * dy > defaultMoveTolerance * defaultMoveTolerance
+  }
+
+  const touching = () => typeof press?.touchId === 'number'
+
+  const findTouch = (touches: TouchList) => {
+    for (let i = 0; i < touches.length; i++) {
+      if (press !== null && touches[i].identifier === press.touchId) {
+        return touches[i]
+      }
+    }
+    return null
+  }
+
+  const onTouchStart = (event: TouchEvent) => {
+    if (!accept(event)) {
+      return
+    }
+
+    // A tracked touch that left the screen, or whose id a new touch reuses, ended where we could not see it (its
+    // target left the DOM mid-press, so its `touchend` never reached `el`).
+    if (touching() && (findTouch(event.touches) === null || findTouch(event.changedTouches) !== null)) {
+      finish(false)
+    }
+
+    let touchesOnElement = 0
+    for (let i = 0; i < event.touches.length; i++) {
+      if (el.contains(event.touches[i].target as Node)) {
+        touchesOnElement++
+      }
+    }
+
+    // A second finger (or a palm) on the element cancels the gesture rather than starting another.
+    if (press !== null || touchesOnElement > 1) {
+      finish(false)
+      return
+    }
+
+    const touch = event.changedTouches[0]
+    begin(touch.clientX, touch.clientY, touch.identifier)
+  }
+
+  const onTouchMove = (event: TouchEvent) => {
+    const touch = event.isTrusted ? findTouch(event.changedTouches) : null
+    if (touch !== null && movedTooFar(touch.clientX, touch.clientY)) {
+      finish(false)
+    }
+  }
+
+  const onTouchEnd = (event: TouchEvent) => {
+    if (accept(event) && findTouch(event.changedTouches) !== null) {
+      finish(event.type === 'touchend')
+    }
+  }
+
+  const onWindowMouse = (event: MouseEvent) => {
+    if (!event.isTrusted) {
+      return
+    }
+
+    if (event.type === 'mouseup') {
+      if (event.button === 0) {
+        finish(event.composedPath().includes(el))
+      }
+    } else if ((event.buttons & 1) === 0 || movedTooFar(event.clientX, event.clientY)) {
+      // No primary button in `buttons` means it was released where no `mouseup` reached the window.
+      finish(false)
+    }
+  }
+
+  const onMouseDown = (event: MouseEvent) => {
+    if (!accept(event) || event.button !== 0) {
+      return
+    }
+
+    const secondContact = touching()
+    // An open mouse press here missed its release; an open touch press makes this a second contact.
+    finish(false)
+    if (!secondContact) {
+      unlistenWindow = listen(window, ['mousemove', 'mouseup'], onWindowMouse, passiveEventOptions)
+      begin(event.clientX, event.clientY, null)
+    }
+  }
+
+  const unlistenElement = [
+    listen(el, ['touchstart'], onTouchStart),
+    listen(el, ['touchmove'], onTouchMove, passiveEventOptions),
+    listen(el, ['touchend', 'touchcancel'], onTouchEnd),
+    listen(el, ['mousedown'], onMouseDown),
+    listen(el, ['mouseup'], accept)
+  ]
+
+  return {
+    teardown: () => {
+      unlistenElement.forEach(unlisten => unlisten())
+      finish(false)
+    }
+  }
+}
+
+const isPrimaryInput = (event: MouseEvent | TouchEvent) => !('button' in event) || event.button === 0
+
+const bindActiveState = (el: HTMLElement): ((deactivate: boolean) => void) => {
+  if (Object.values(dataBindPostfixes).some(postfix => typeof el.dataset[dataBindingPrefix + postfix] !== 'undefined')) {
     return () => {}
   }
 
-  const eventCallback = (event: MouseEvent | TouchEvent) => {
-    if (event.type === 'mousedown' || event.type === 'touchstart') {
-      el.dataset[dataStatePrefix + dataStateActivePostfix] = ''
-    } else {
-      delete (el.dataset[dataStatePrefix + dataStateActivePostfix])
+  const dataState = dataStatePrefix + dataStateActivePostfix
+  const tracker = trackPress(el, () => { el.dataset[dataState] = '' }, () => { delete (el.dataset[dataState]) }, false)
+
+  return (deactivate) => {
+    tracker.teardown()
+    if (deactivate) {
+      el.dataset[dataStatePrefix + dataStateDeactivatedPostfix] = ''
     }
   }
+}
 
-  el.addEventListener('touchstart', eventCallback, eventOptions)
-  el.addEventListener('touchend', eventCallback, eventOptions)
-  el.addEventListener('mousedown', eventCallback, eventOptions)
-  el.addEventListener('mouseup', eventCallback, eventOptions)
+const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
+  const clickTimer = createTimer()
+  const tracker = trackPress(el, () => clickTimer.start(defaultEventTimeout), (released) => {
+    const inTime = clickTimer.pending()
+    clickTimer.clear()
+    if (released && inTime) {
+      fire()
+    }
+  })
 
   return () => {
-    el.removeEventListener('touchstart', eventCallback, eventOptions)
-    el.removeEventListener('touchend', eventCallback, eventOptions)
-    el.removeEventListener('mousedown', eventCallback, eventOptions)
-    el.removeEventListener('mouseup', eventCallback, eventOptions)
-    el.dataset[dataStatePrefix + dataStateDeactivatedPostfix] = ''
+    tracker.teardown()
+    clickTimer.clear()
   }
 }
 
-const singleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
-  const dataBinding = dataBindingPrefix + dataBindClickPostfix
-  const clickTimeout = defaultEventTimeout
-  let clickState: number | null = null
-
-  const eventCallback = (event: MouseEvent | TouchEvent) => {
-    if (event.isTrusted) {
-      if (event.cancelable) {
-        event.preventDefault()
-      }
-
-      if (event.type === 'mousedown' || event.type === 'touchstart') {
-        if (clickState !== null) {
-          clearTimeout(clickState)
-        }
-        clickState = window.setTimeout(() => {
-          if (clickState !== null) {
-            clearTimeout(clickState)
-            clickState = null
-          }
-        }, clickTimeout)
-      } else if ((event.type === 'mouseup' || event.type === 'touchend') && clickState !== null) {
-        clearTimeout(clickState)
-        clickState = null
-
-        onEvent(() => {
-          unbindClasses()
-          el.removeEventListener('touchstart', eventCallback, eventOptions)
-          el.removeEventListener('touchend', eventCallback, eventOptions)
-          el.removeEventListener('mousedown', eventCallback, eventOptions)
-          el.removeEventListener('mouseup', eventCallback, eventOptions)
-          delete (el.dataset[dataBinding])
-        })
-      }
-    }
-  }
-
-  const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback, eventOptions)
-  el.addEventListener('touchend', eventCallback, eventOptions)
-  el.addEventListener('mousedown', eventCallback, eventOptions)
-  el.addEventListener('mouseup', eventCallback, eventOptions)
-  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
-}
-
-const doubleBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
-  const dataBinding = dataBindingPrefix + dataBindDoublePostfix
-  const clickTimeout = defaultEventTimeout
+const doubleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
   const doubleClickTimeout = bindingOptions.time ?? defaultEventTimeout
-  let clickState: number | null = null
-  let clickCount: number = 0
+  const clickTimer = createTimer()
+  let clickCount = 0
 
-  const eventCallback = (event: MouseEvent | TouchEvent) => {
-    if (event.isTrusted) {
-      if (event.cancelable) {
-        event.preventDefault()
-      }
-
-      if (event.type === 'mousedown' || event.type === 'touchstart') {
-        if (clickState !== null) {
-          clearTimeout(clickState)
-        }
-        clickState = window.setTimeout(() => {
-          if (clickState !== null) {
-            clearTimeout(clickState)
-            clickState = null
-            clickCount = 0
-          }
-        }, clickTimeout)
-      } else if ((event.type === 'mouseup' || event.type === 'touchend') && clickState !== null) {
-        clearTimeout(clickState)
-        clickState = null
-        if (clickCount === 0) {
-          clickCount++
-          clickState = window.setTimeout(() => {
-            if (clickState !== null) {
-              clearTimeout(clickState)
-              clickState = null
-              clickCount = 0
-            }
-          }, doubleClickTimeout)
-        } else {
-          clickCount = 0
-          onEvent(() => {
-            unbindClasses()
-            el.removeEventListener('touchstart', eventCallback, eventOptions)
-            el.removeEventListener('touchend', eventCallback, eventOptions)
-            el.removeEventListener('mousedown', eventCallback, eventOptions)
-            el.removeEventListener('mouseup', eventCallback, eventOptions)
-            delete (el.dataset[dataBinding])
-          })
-        }
-      }
-    }
+  const reset = () => {
+    clickTimer.clear()
+    clickCount = 0
   }
 
-  const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback, eventOptions)
-  el.addEventListener('touchend', eventCallback, eventOptions)
-  el.addEventListener('mousedown', eventCallback, eventOptions)
-  el.addEventListener('mouseup', eventCallback, eventOptions)
-  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
+  const tracker = trackPress(el, () => clickTimer.start(defaultEventTimeout, reset), (released) => {
+    if (!released || !clickTimer.pending()) {
+      reset()
+    } else if (clickCount === 0) {
+      clickCount++
+      clickTimer.start(doubleClickTimeout, reset)
+    } else {
+      reset()
+      fire()
+    }
+  })
+
+  return () => {
+    tracker.teardown()
+    reset()
+  }
 }
 
-const holdBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
-  const dataBinding = dataBindingPrefix + dataBindHoldPostfix
-  const holdTimeout = bindingOptions.time ?? defaultEventTimeout
-  let holdState: number | null = null
+const holdBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
+  const holdTimer = createTimer()
+  const tracker = trackPress(el, () => holdTimer.start(bindingOptions.time ?? defaultEventTimeout, fire), () => holdTimer.clear())
 
-  const eventCallback = (event: MouseEvent | TouchEvent) => {
-    if (event.isTrusted) {
-      if (event.cancelable) {
-        event.preventDefault()
-      }
-
-      if (event.type === 'mousedown' || event.type === 'touchstart') {
-        holdState = window.setTimeout(() => {
-          onEvent(() => {
-            unbindClasses()
-            el.removeEventListener('touchstart', eventCallback, eventOptions)
-            el.removeEventListener('touchend', eventCallback, eventOptions)
-            el.removeEventListener('mousedown', eventCallback, eventOptions)
-            el.removeEventListener('mouseup', eventCallback, eventOptions)
-            delete (el.dataset[dataBinding])
-          })
-        }, holdTimeout)
-      } else if ((event.type === 'mouseup' || event.type === 'touchend') && holdState !== null) {
-        clearTimeout(holdState)
-        holdState = null
-      }
-    }
+  return () => {
+    tracker.teardown()
+    holdTimer.clear()
   }
-
-  const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback, eventOptions)
-  el.addEventListener('touchend', eventCallback, eventOptions)
-  el.addEventListener('mousedown', eventCallback, eventOptions)
-  el.addEventListener('mouseup', eventCallback, eventOptions)
-  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 }
 
-const pressBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
-  const dataBinding = dataBindingPrefix + dataBindPressPostfix
-  const eventCallback = (event: MouseEvent | TouchEvent) => {
+const edgeBehavior = (types: string[]): BehaviorBinder => (el, bindingOptions, fire) => {
+  return listen(el, types, (event: MouseEvent | TouchEvent) => {
     if (event.isTrusted) {
       if (event.cancelable) {
         event.preventDefault()
       }
 
-      onEvent(() => {
-        unbindClasses()
-        el.removeEventListener('touchend', eventCallback, eventOptions)
-        el.removeEventListener('mousedown', eventCallback, eventOptions)
-        delete (el.dataset[dataBinding])
-      })
+      if (isPrimaryInput(event)) {
+        fire()
+      }
     }
-  }
-
-  const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchstart', eventCallback, eventOptions)
-  el.addEventListener('mousedown', eventCallback, eventOptions)
-  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
+  })
 }
 
-const releaseBehavior = (el: HTMLElement, bindingOptions: BindingOptions, onEvent: (removeBinding: () => void) => void) => {
-  const dataBinding = dataBindingPrefix + dataBindReleasePostfix
-  const eventCallback = (event: MouseEvent | TouchEvent) => {
-    if (event.isTrusted) {
-      if (event.cancelable) {
-        event.preventDefault()
-      }
-
-      onEvent(() => {
-        unbindClasses()
-        el.removeEventListener('touchend', eventCallback, eventOptions)
-        el.removeEventListener('mouseup', eventCallback, eventOptions)
-        delete (el.dataset[dataBinding])
-      })
-    }
-  }
-
-  const unbindClasses = bindClassStates(el)
-  el.addEventListener('touchend', eventCallback, eventOptions)
-  el.addEventListener('mouseup', eventCallback, eventOptions)
-  el.dataset[dataBinding] = bindingOptions.modifier ?? ''
+const behaviors: Record<Behavior, BehaviorBinder> = {
+  [Behavior.Single]: singleBehavior,
+  [Behavior.Double]: doubleBehavior,
+  [Behavior.Hold]: holdBehavior,
+  [Behavior.Press]: edgeBehavior(['touchstart', 'mousedown']),
+  [Behavior.Release]: edgeBehavior(['touchend', 'mouseup'])
 }
 
 const onceModifier = (bindingOptions: BindingOptions) => {
@@ -279,7 +343,7 @@ const debounceModifier = (bindingOptions: BindingOptions) => {
 }
 
 export const ClickDirective: Directive = {
-  mounted (el, binding) {
+  mounted (el: HTMLElement, binding) {
     const bindingOptions = ParseBinding(binding)
     let dispatch: (removeBinding: () => void) => void = () => bindingOptions.dispatch()
 
@@ -295,29 +359,19 @@ export const ClickDirective: Directive = {
         break
     }
 
-    const disableableDispatch: (removeBinding: () => void) => void = (removeBinding) => {
-      if (el.disabled !== true) {
+    const dataBinding = dataBindingPrefix + dataBindPostfixes[bindingOptions.behavior]
+    const deactivate = bindActiveState(el)
+    const removeBinding = () => {
+      teardownBehavior()
+      deactivate(true)
+      delete (el.dataset[dataBinding])
+    }
+    const teardownBehavior = behaviors[bindingOptions.behavior](el, bindingOptions, () => {
+      if ((el as { disabled?: unknown }).disabled !== true) {
         dispatch(removeBinding)
       }
-    }
-
-    switch (bindingOptions.behavior) {
-      case Behavior.Single:
-        singleBehavior(el, bindingOptions, disableableDispatch)
-        break
-      case Behavior.Double:
-        doubleBehavior(el, bindingOptions, disableableDispatch)
-        break
-      case Behavior.Hold:
-        holdBehavior(el, bindingOptions, disableableDispatch)
-        break
-      case Behavior.Press:
-        pressBehavior(el, bindingOptions, disableableDispatch)
-        break
-      case Behavior.Release:
-        releaseBehavior(el, bindingOptions, disableableDispatch)
-        break
-    }
+    })
+    el.dataset[dataBinding] = bindingOptions.modifier ?? ''
   }
 }
 
