@@ -1,9 +1,21 @@
-on: 
+on:
   push:
     branches:
       - main
+  # Retry a release by hand, e.g. after a failed publish.
+  workflow_dispatch:
 
 name: Publish
+
+permissions:
+  # Push the demo to the `demo` branch and create the GitHub release.
+  contents: write
+  # npm trusted publishing (OIDC): no npm token is stored, and provenance is attached automatically.
+  id-token: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -11,57 +23,65 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Use Node.js v19
-        uses: actions/setup-node@v3
+      # Trusted publishing needs npm 11.5.1 or later, which Node.js 24 ships. No dependency cache in a
+      # release build (setup-node v4 caches only when `cache` is set).
+      - name: Use Node.js v24
+        uses: actions/setup-node@v4
         with:
-          node-version: 19
-          cache: 'npm'
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Check if version has been updated 
+      # Publish whenever package.json names a version npm doesn't have yet, so a failed publish
+      # can be retried (re-run, or run this workflow by hand) without another version bump.
+      - name: Check whether this version is on npm
         id: check
-        uses: EndBug/version-check@v1.2.0
-        with:
-          diff-search: true
-      
-      - name: Log when changed
-        if: steps.check.outputs.changed == 'true'
-        run: 'echo "Version change found! New version: ${{ steps.check.outputs.version }} (${{ steps.check.outputs.type }})"'
+        run: |
+          echo "npm $(npm --version)"
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          status=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/$name/$version")
+          if [ "$status" = 200 ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is already on npm; nothing to publish."
+          elif [ "$status" = 404 ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is not on npm yet; publishing."
+          else
+            echo "::error::The npm registry answered $status for $name@$version."
+            exit 1
+          fi
 
       - name: Install Dependencies
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.publish == 'true'
         run: npm ci
 
       - name: Build
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.publish == 'true'
         run: npm run build
 
-      - name: Publish to NPM
-        if: steps.check.outputs.changed == 'true'
-        run: npm publish --provenance --access public
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm
+        if: steps.check.outputs.publish == 'true'
+        run: npm publish --access public
 
       - name: Build Demo
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.publish == 'true'
         run: npm run demo
 
       - name: Push Demo
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.publish == 'true'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          BRANCH: demo
-          FOLDER: demo
-          CLEAN: true
-          COMMIT_MESSAGE: v${{ steps.check.outputs.version }}
-      
+          branch: demo
+          folder: demo
+          clean: true
+          commit-message: v${{ steps.check.outputs.version }}
+
       - name: Create Release
-        if: steps.check.outputs.changed == 'true'
-        uses: actions/create-release@v1
+        if: steps.check.outputs.publish == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.check.outputs.version }}
-          release_name: Release v${{ steps.check.outputs.version }}
-    
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Release v$VERSION" --generate-notes

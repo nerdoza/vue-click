@@ -263,6 +263,8 @@ button[data-vc-bind-press] {
 
 `npm run dev` serves the demo page. `npm test` runs the Playwright suite in `tests/`, which drives a test page with real mouse, keyboard and touch input in Chromium; install the browser once with `npx playwright install chromium`.
 
+To release, bump `version` in `package.json` and merge to `main`. The Publish workflow publishes any version npm doesn't have yet through npm trusted publishing (no npm token is stored; provenance is attached automatically), then deploys the demo and creates the GitHub release. If a publish fails, re-run the workflow, or run it by hand from the Actions tab.
+
 ---
 
 ## Copyright and License
