@@ -110,6 +110,15 @@ const setState = async (page: Page, patch: Partial<PageState>) => {
   }, patch)
 }
 
+/** Reloads the page reporting `platform` as `navigator.platform`. */
+const onPlatform = async (page: Page, platform: string) => {
+  await page.addInitScript((platform) => {
+    Object.defineProperty(Navigator.prototype, 'platform', { get: () => platform })
+  }, platform)
+  await page.reload()
+  await expect(page.getByTestId('single')).toBeVisible()
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('single')).toBeVisible()
@@ -301,6 +310,38 @@ test.describe('primary mouse button only', () => {
     await page.mouse.down({ button: 'right' })
     expect(await page.getByTestId('single').getAttribute('data-vc-state-active')).toBeNull()
     await page.mouse.up({ button: 'right' })
+  })
+
+  test('on macOS a Control-click is the secondary click and fires nothing', async ({ page }) => {
+    await onPlatform(page, 'MacIntel')
+    await page.keyboard.down('Control')
+    for (const id of ['single', 'double', 'press', 'release']) {
+      await click(page, id)
+      await click(page, id)
+    }
+    await pointAt(page, 'hold')
+    await page.mouse.down()
+    expect(await page.getByTestId('hold').getAttribute('data-vc-state-active')).toBeNull()
+    await page.waitForTimeout(500)
+    await page.mouse.up()
+    await page.keyboard.up('Control')
+    await page.waitForTimeout(400)
+    for (const id of ['single', 'double', 'hold', 'press', 'release']) {
+      expect(await callsOf(page, id), id).toEqual([])
+    }
+
+    await click(page, 'single')
+    await expectCalls(page, 'single', [null])
+  })
+
+  test('elsewhere a Control-click is a primary click', async ({ page }) => {
+    await onPlatform(page, 'Win32')
+    await page.keyboard.down('Control')
+    await click(page, 'single')
+    await click(page, 'press')
+    await page.keyboard.up('Control')
+    await expectCalls(page, 'single', [null])
+    expect(await callsOf(page, 'press')).toEqual([null])
   })
 })
 

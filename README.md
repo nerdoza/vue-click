@@ -126,7 +126,7 @@ The `v-click` event will be fired immediately on the `up` event, which will alwa
 
 The behaviors listen to touch and mouse events directly, with a few rules that keep stray input from firing them:
 
-- **Primary button only:** only the primary mouse button (usually the left) counts; right and middle clicks never fire a behavior or set the active state.
+- **Primary button only:** only the primary mouse button (usually the left) counts; right and middle clicks never fire a behavior or set the active state. On macOS and iPadOS a <kbd>Control</kbd>-click is the secondary click and is ignored the same way; on other platforms it is a primary click.
 - **Movement tolerance:** a single, double or hold press is cancelled once the pointer moves more than `10px` from where it went down, so a swipe or drag is not a click and a hold doesn't fire after the finger slides away.
 - **Cancel and release outside:** a press ends when the pointer is released anywhere, on the element or off it, when the browser cancels the touch (`touchcancel`), or when a second finger touches the element. Only a release on the element can complete a click, and every way a press ends clears its pending hold and the `data-vc-state-active` attribute.
 - **Trusted input only:** events dispatched by scripts (ex: `element.click()` or `dispatchEvent()`) are ignored.
