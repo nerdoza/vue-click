@@ -1,4 +1,4 @@
-import { Directive } from 'vue'
+import { Directive, DirectiveBinding, VNode } from 'vue'
 import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
 const defaultEventTimeout = 300
@@ -320,60 +320,71 @@ const behaviors: Record<Behavior, BehaviorBinder> = {
   [Behavior.Release]: edgeBehavior(['touchend', 'mouseup'])
 }
 
-const onceModifier = (bindingOptions: BindingOptions) => {
-  return (removeBinding: () => void) => {
+interface ModifierHandle {
+  fire: (removeBinding: Teardown) => void
+  teardown: Teardown
+}
+
+const onceModifier = (bindingOptions: BindingOptions): ModifierHandle => ({
+  fire: (removeBinding) => {
     removeBinding()
     bindingOptions.dispatch()
-  }
-}
+  },
+  teardown: () => {}
+})
 
-const throttleModifier = (bindingOptions: BindingOptions) => {
+const throttleModifier = (bindingOptions: BindingOptions): ModifierHandle => {
   const throttleTime = bindingOptions.time ?? defaultEventTimeout
-  let throttledState: number | null = null
+  const throttleTimer = createTimer()
 
-  return () => {
-    if (throttledState === null) {
-      bindingOptions.dispatch()
-    } else {
-      clearTimeout(throttledState)
-    }
-    throttledState = window.setTimeout(() => { throttledState = null }, throttleTime)
+  return {
+    fire: () => {
+      if (!throttleTimer.pending()) {
+        bindingOptions.dispatch()
+      }
+      throttleTimer.start(throttleTime)
+    },
+    teardown: throttleTimer.clear
   }
 }
 
-const debounceModifier = (bindingOptions: BindingOptions) => {
+const debounceModifier = (bindingOptions: BindingOptions): ModifierHandle => {
   const debounceTime = bindingOptions.time ?? defaultEventTimeout
-  let debouncedState: number | null = null
+  const debounceTimer = createTimer()
 
-  return () => {
-    if (debouncedState !== null) {
-      clearTimeout(debouncedState)
-    }
-
-    debouncedState = window.setTimeout(() => {
-      debouncedState = null
-      bindingOptions.dispatch()
-    }, debounceTime)
+  return {
+    fire: () => debounceTimer.start(debounceTime, () => bindingOptions.dispatch()),
+    teardown: debounceTimer.clear
   }
 }
+
+const bindModifier = (bindingOptions: BindingOptions): ModifierHandle => {
+  switch (bindingOptions.modifier) {
+    case Modifier.Once:
+      return onceModifier(bindingOptions)
+    case Modifier.Throttle:
+      return throttleModifier(bindingOptions)
+    case Modifier.Debounce:
+      return debounceModifier(bindingOptions)
+    default:
+      return { fire: () => bindingOptions.dispatch(), teardown: () => {} }
+  }
+}
+
+interface ClickBinding {
+  bindingOptions: BindingOptions
+  teardown: Teardown
+}
+
+/** Each element's v-click bindings, keyed by their place in `vnode.dirs`: that is how Vue pairs them across renders. */
+const elementBindings = new WeakMap<HTMLElement, Map<number, ClickBinding>>()
+
+const bindingKey = (binding: DirectiveBinding, vnode: VNode) => vnode.dirs?.indexOf(binding) ?? -1
 
 export const ClickDirective: Directive = {
-  mounted (el: HTMLElement, binding) {
+  mounted (el: HTMLElement, binding, vnode) {
     const bindingOptions = ParseBinding(binding)
-    let dispatch: (removeBinding: () => void) => void = () => bindingOptions.dispatch()
-
-    switch (bindingOptions.modifier) {
-      case Modifier.Once:
-        dispatch = onceModifier(bindingOptions)
-        break
-      case Modifier.Throttle:
-        dispatch = throttleModifier(bindingOptions)
-        break
-      case Modifier.Debounce:
-        dispatch = debounceModifier(bindingOptions)
-        break
-    }
-
+    const modifier = bindModifier(bindingOptions)
     const dataBinding = dataBindingPrefix + dataBindPostfixes[bindingOptions.behavior]
     const deactivate = bindActiveState(el)
     const removeBinding = () => {
@@ -383,10 +394,34 @@ export const ClickDirective: Directive = {
     }
     const teardownBehavior = behaviors[bindingOptions.behavior](el, bindingOptions, () => {
       if ((el as { disabled?: unknown }).disabled !== true) {
-        dispatch(removeBinding)
+        modifier.fire(removeBinding)
       }
     })
     el.dataset[dataBinding] = bindingOptions.modifier ?? ''
+
+    const bindings = elementBindings.get(el) ?? new Map<number, ClickBinding>()
+    bindings.set(bindingKey(binding, vnode), {
+      bindingOptions,
+      teardown: () => {
+        teardownBehavior()
+        modifier.teardown()
+        deactivate(false)
+      }
+    })
+    elementBindings.set(el, bindings)
+  },
+  updated (el: HTMLElement, binding, vnode) {
+    const clickBinding = elementBindings.get(el)?.get(bindingKey(binding, vnode))
+    if (clickBinding !== undefined) {
+      // Only the handler and its argument follow the binding; the behavior, modifier and time stay as mounted.
+      clickBinding.bindingOptions.dispatch = ParseBinding(binding).dispatch
+    }
+  },
+  beforeUnmount (el: HTMLElement, binding, vnode) {
+    const bindings = elementBindings.get(el)
+    const key = bindingKey(binding, vnode)
+    bindings?.get(key)?.teardown()
+    bindings?.delete(key)
   }
 }
 
