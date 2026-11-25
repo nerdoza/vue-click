@@ -1,5 +1,5 @@
 # Vue Click
-![Publish](https://github.com/nerdoza/vue-click/workflows/Publish/badge.svg)
+[![Publish](https://github.com/nerdoza/vue-click/actions/workflows/publish.yml/badge.svg)](https://github.com/nerdoza/vue-click/actions/workflows/publish.yml)
 
 Vue 3 plugin for advanced click directive.
 
@@ -7,10 +7,10 @@ Vue 3 plugin for advanced click directive.
 
 # Installation
 
-## Npm
+## npm
 
 ```bash
-npm install --save vue-click
+npm install vue-click
 ```
 
 Install the plugin into Vue:
@@ -29,14 +29,13 @@ app.mount('#app')
 This package is available from the [**JSDELIVR**](https://www.jsdelivr.com/) and [**UNPKG**](https://unpkg.com/) content delivery networks (CDNs) and utilizes the [**UMD**](https://github.com/umdjs/umd#readme) module system so it's ready to use directly in the browser without a build step.
 
 ```html
-<script src="https://unpkg.com/vue@next"></script>
+<script src="https://unpkg.com/vue@3"></script>
 <script src="https://unpkg.com/vue-click@latest"></script>
 <script>
   const app = Vue.createApp({/* App Config */})
   app.use(VueClick.default)
   app.mount('#app')
 </script>
-  
 ```
 
 # Usage
@@ -53,7 +52,7 @@ Further modify the behavior of the button by adding modifiers:
 
 ```html
 <button v-click.double.once="removeAd">
-<button v-click.throttle.400s="openModal">
+<button v-click.throttle.400ms="openModal">
 ```
 
 Only one behavior and one modifier can be used in a single directive declaration, but multiple directives can be placed on the same element.
@@ -82,7 +81,7 @@ The `v-click` event can be bound to fire only on a double click. The event is fi
 <button v-click.double="openModal">
 ```
 
-The default time period is `300ms`, but this can be modify by append the preferred time to the `double` modifier.
+The default time period is `300ms`, but this can be changed by appending the preferred time to the `double` modifier.
 
 ```html
 <button v-click.double.1s="openModal">
@@ -98,7 +97,7 @@ The `v-click` event can be bound to fire after a specified amount of time that t
 <button v-click.hold="openModal">
 ```
 
-The default time period is `300ms`, but this can be modify by append the preferred time to the `hold` modifier.
+The default time period is `300ms`, but this can be changed by appending the preferred time to the `hold` modifier.
 
 ```html
 <button v-click.hold.1s="openModal">
@@ -135,7 +134,7 @@ The behaviors listen to touch and mouse events directly, with a few rules that k
 
 One modifier may be used in a declaration and changes the behavior of the event trigger to reduce unintended event firing.
 
-### Once Modifiers
+### Once Modifier
 
 The `once` modifier causes the click listener to only issue a call once and then the binding is disposed.
 
@@ -151,7 +150,7 @@ The `v-click` can be throttled to prevent accidentally issuing multiple click ev
 <button v-click.throttle="openModal">
 ```
 
-The default time interval is `300ms`, but this can be modify by append the preferred time to the `throttle` modifier.
+The default time interval is `300ms`, but this can be changed by appending the preferred time to the `throttle` modifier.
 
 ```html
 <button v-click.throttle.500ms="openModal">
@@ -165,7 +164,7 @@ The `v-click` can be debounced to prevent the premature issuance of click events
 <button v-click.debounce="openModal">
 ```
 
-The default time period is `300ms`, but this can be modify by append the preferred time to the `debounce` modifier.
+The default time period is `300ms`, but this can be changed by appending the preferred time to the `debounce` modifier.
 
 ```html
 <button v-click.debounce.20ms="openModal">
@@ -173,7 +172,7 @@ The default time period is `300ms`, but this can be modify by append the preferr
 
 ## Time
 
-The time attribute allows overriding of default times by appending the time period to the end of the behavior or modifier (ie: `double`, `throttle`, `debounce`).
+The time attribute allows overriding of default times by appending the time period to the end of the behavior or modifier (`double`, `hold`, `throttle` or `debounce`).
 
 Time modifiers automatically use milliseconds as the default unit of measure, but additional units are supported by appending the unit abbreviation to the value.
 
@@ -209,7 +208,7 @@ For the above example, the `buttonPress` function will be called with the string
 
 ## Styling
 
-The addition of `TouchEvent` support has resulted in the breaking of normal event propagation which means pseudo selectors like `:active` and `:focus` will no longer active on events. Instead, the `data-vc-state-active` data attribute will be applied during the target elements active state. This works better across both mobile and desktop environments than the `:active` state as it's cleared when the user's finger is removed (where `:active` persists until focus is changed). It's also cleared when the press is cancelled: released off the element, moved past the [movement tolerance](#pointer-input) or interrupted by `touchcancel` or a second finger. There is also a `data-vc-state-deactivated` data attribute which is applied when the binding is removed from an element (ex: `once` modifier).
+The addition of `TouchEvent` support has resulted in the breaking of normal event propagation which means pseudo-classes like `:active` and `:focus` will no longer activate on these events. Instead, the `data-vc-state-active` data attribute will be applied during the target elements active state. This works better across both mobile and desktop environments than the `:active` state as it's cleared when the user's finger is removed (where `:active` persists until focus is changed). It's also cleared when the press is cancelled: released off the element, moved past the [movement tolerance](#pointer-input) or interrupted by `touchcancel` or a second finger. There is also a `data-vc-state-deactivated` data attribute which is applied when the binding is removed from an element (ex: `once` modifier).
 
 This plugin also provides data attributes for the behavior to allow advanced styling based on the desired user experience.
 
@@ -257,13 +256,15 @@ button[data-vc-bind-press] {
 }
 ```
 
-**Note:** When the `once` modifier is applied, the data-set binding will be removed once the event listener is removed (after the event is fired).
+**Note:** When the `once` modifier is applied, the `data-vc-bind-*` attribute is removed along with the event listener (after the event fires).
 
 # Development
 
-`npm run dev` serves the demo page. `npm test` runs the Playwright suite in `tests/`, which drives a test page with real mouse, keyboard and touch input in Chromium; install the browser once with `npx playwright install chromium`.
+Development needs Node.js 22.15 or later. `npm run dev` serves the demo page, and `npm run lint` and `npm run typecheck` check the code.
 
-To release, bump `version` in `package.json` and merge to `main`. The Publish workflow publishes any version npm doesn't have yet through npm trusted publishing (no npm token is stored; provenance is attached automatically), then deploys the demo and creates the GitHub release. If a publish fails, re-run the workflow, or run it by hand from the Actions tab.
+`npm test` runs the Playwright suite in `tests/`, which drives a test page with real mouse, keyboard and touch input in Chromium; install the browser once with `npx playwright install chromium`. `npm run test:package` builds and packs the package as npm would publish it, then type-checks a consumer against its typings, runs the same suite against the packed bundle, and loads it from a `<script>` tag and on the server (see `tests/package`).
+
+To release, bump `version` in `package.json` and merge to `main`. The Publish workflow runs the tests, then publishes any version npm doesn't have yet through npm trusted publishing (no npm token is stored; provenance is attached automatically), deploys the demo and creates the GitHub release. If a release fails partway, re-run the workflow, or run it by hand from the Actions tab: it finishes whichever steps haven't succeeded for that version.
 
 ---
 
