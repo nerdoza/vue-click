@@ -260,7 +260,7 @@ button[data-vc-bind-press] {
 
 # Development
 
-Development needs Node.js 22.15 or later. `npm run dev` serves the demo page, and `npm run lint` and `npm run typecheck` check the code.
+Development needs Node.js 22.15 or later (CI runs Node.js 26). `npm run dev` serves the demo page, and `npm run lint` and `npm run typecheck` check the code.
 
 `npm test` runs the Playwright suite in `tests/`, which drives a test page with real mouse, keyboard and touch input in Chromium; install the browser once with `npx playwright install chromium`. `npm run test:package` builds and packs the package as npm would publish it, then type-checks a consumer against its typings, runs the same suite against the packed bundle, and loads it from a `<script>` tag and on the server (see `tests/package`).
 

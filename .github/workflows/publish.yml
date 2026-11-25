@@ -34,11 +34,11 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v7
 
-      # Trusted publishing needs npm 11.5.1 or later, which Node.js 24 ships. No dependency cache in a release build.
-      - name: Use Node.js v24
+      # Trusted publishing needs npm 11.5.1 or later, which Node.js 24 and later ship. No dependency cache in a release build.
+      - name: Use Node.js v26
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
           registry-url: 'https://registry.npmjs.org'
           package-manager-cache: false
 
