@@ -1,5 +1,5 @@
 import { createApp, reactive } from 'vue'
-import VueClick from '../../src'
+import VueClick from 'vue-click'
 import { TimeParser } from '../../src/time'
 
 /**

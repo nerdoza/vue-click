@@ -1,4 +1,11 @@
+const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+
+// The test page imports the plugin as `vue-click`: the source by default, or with VUE_CLICK_TARGET=package the packed
+// package that `npm run test:package` installs (resolved through its package.json, as an app's bundler would).
+const vueClick = process.env.VUE_CLICK_TARGET === 'package'
+  ? path.resolve(__dirname, '../tests/package/node_modules/vue-click')
+  : path.resolve(__dirname, '../src/index.ts')
 
 // Serves `tests/page` for the Playwright suite (see playwright.config.ts).
 module.exports = {
@@ -16,7 +23,8 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     alias: {
-      vue: 'vue/dist/vue.esm-bundler.js'
+      vue: 'vue/dist/vue.esm-bundler.js',
+      'vue-click$': vueClick
     }
   },
   devtool: 'inline-source-map',

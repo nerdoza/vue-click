@@ -22,6 +22,9 @@ npm-debug.log.*
 dist/
 demo/
 
+# Package tests (tests/package/pack.js)
+*.tgz
+
 # Playwright output
 test-results/
 playwright-report/
