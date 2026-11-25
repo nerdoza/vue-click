@@ -7,45 +7,58 @@ on:
 
 name: Publish
 
-permissions:
-  # Push the demo to the `demo` branch and create the GitHub release.
-  contents: write
-  # npm trusted publishing (OIDC): no npm token is stored, and provenance is attached automatically.
-  id-token: write
+# Each job asks for only the permissions it needs.
+permissions: {}
 
 concurrency:
   group: publish
   cancel-in-progress: false
 
 jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+
   publish:
     name: Build and Publish
+    needs: test
     runs-on: ubuntu-latest
+    permissions:
+      # Push the demo to the `demo` branch and create the GitHub release.
+      contents: write
+      # npm trusted publishing (OIDC): no npm token is stored, and provenance is attached automatically.
+      id-token: write
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      # Trusted publishing needs npm 11.5.1 or later, which Node.js 24 ships. No dependency cache in a
-      # release build (setup-node v4 caches only when `cache` is set).
+      # Trusted publishing needs npm 11.5.1 or later, which Node.js 24 ships. No dependency cache in a release build.
       - name: Use Node.js v24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
 
-      # Publish whenever package.json names a version npm doesn't have yet, so a failed publish
-      # can be retried (re-run, or run this workflow by hand) without another version bump.
-      - name: Check whether this version is on npm
+      # Each release step runs until it has succeeded once for the version in package.json: publish while npm doesn't
+      # have the version, deploy the demo and create the GitHub release while that release doesn't exist. A failed
+      # release is finished by re-running this workflow (or running it by hand), with no version bump.
+      - name: Check what this version still needs
         id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "npm $(npm --version)"
           name=$(node -p "require('./package.json').name")
           version=$(node -p "require('./package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
           status=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/$name/$version")
           if [ "$status" = 200 ]; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "$name@$version is already on npm; nothing to publish."
+            echo "$name@$version is already on npm."
           elif [ "$status" = 404 ]; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
             echo "$name@$version is not on npm yet; publishing."
@@ -54,8 +67,19 @@ jobs:
             exit 1
           fi
 
+          if release=$(gh release view "v$version" --json tagName 2>&1); then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "Release v$version already exists."
+          elif [[ "$release" == *"release not found"* ]]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Release v$version doesn't exist yet; deploying the demo and creating it."
+          else
+            echo "::error::Couldn't look up release v$version: $release"
+            exit 1
+          fi
+
       - name: Install Dependencies
-        if: steps.check.outputs.publish == 'true'
+        if: steps.check.outputs.publish == 'true' || steps.check.outputs.release == 'true'
         run: npm ci
 
       - name: Build
@@ -67,11 +91,11 @@ jobs:
         run: npm publish --access public
 
       - name: Build Demo
-        if: steps.check.outputs.publish == 'true'
+        if: steps.check.outputs.release == 'true'
         run: npm run demo
 
       - name: Push Demo
-        if: steps.check.outputs.publish == 'true'
+        if: steps.check.outputs.release == 'true'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: demo
@@ -80,7 +104,7 @@ jobs:
           commit-message: v${{ steps.check.outputs.version }}
 
       - name: Create Release
-        if: steps.check.outputs.publish == 'true'
+        if: steps.check.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.check.outputs.version }}
