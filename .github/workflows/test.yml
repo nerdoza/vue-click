@@ -1,7 +1,12 @@
 on:
   pull_request:
+  # The Publish workflow runs this on every push to `main`, before it releases anything.
+  workflow_call:
 
 name: Test
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -9,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Use Node.js v24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: 'npm'
@@ -23,6 +30,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Type Check
+        run: npm run typecheck
+
       - name: Build
         run: npm run build
 
@@ -32,9 +42,13 @@ jobs:
       - name: Test
         run: npm test
 
+      # Packs the build as npm would publish it, type-checks a consumer against it and runs the suite on it.
+      - name: Test the Package
+        run: npm run test:package
+
       - name: Upload Test Results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: test-results/

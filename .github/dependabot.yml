@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    # Let new releases settle for a week before proposing them.
+    cooldown:
+      default-days: 7
+    groups:
+      # Minor and patch updates arrive as one pull request; each major update gets its own.
+      dev-dependencies:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # TypeScript 7 has no compiler API for ts-loader and typescript-eslint until 7.1.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns:
+          - '*'
