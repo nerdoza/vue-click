@@ -1,15 +1,14 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ]
+  },
   "include": [
     "./src/**/*",
     "./dev/**/*",
     "./tests/**/*",
-    "./playwright.config.ts",
-    "./node_modules/@types"
-  ],
-  "exclude": [
-    "./node_modules",
-    "./dist",
-    "./demo"
+    "./playwright.config.ts"
   ]
 }

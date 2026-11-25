@@ -1,5 +1,4 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const webpack = require('webpack')
 
 module.exports = {
   mode: 'development',
@@ -30,11 +29,9 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './dev/index.html'
-    }),
-    new webpack.HotModuleReplacementPlugin()
+    })
   ],
   output: {
-    hashFunction: 'xxhash64',
     filename: 'index.js'
   }
 }

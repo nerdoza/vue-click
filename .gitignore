@@ -18,11 +18,9 @@ node_modules/
 npm-debug.log
 npm-debug.log.*
 
-# Ignore the dist directory
-dist/*
-
-# Keep gitkeep files
-!.gitkeep
+# Build output (the demo is deployed to the `demo` branch by the Publish workflow)
+dist/
+demo/
 
 # Playwright output
 test-results/

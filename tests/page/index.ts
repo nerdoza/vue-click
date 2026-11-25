@@ -35,13 +35,13 @@ const indexOfListener = (type: string, listener: unknown, options?: boolean | Ev
 }
 const addEventListener = window.addEventListener.bind(window)
 const removeEventListener = window.removeEventListener.bind(window)
-window.addEventListener = (type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) => {
+window.addEventListener = (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => {
   if (indexOfListener(type, listener, options) === -1) {
     windowListeners.push({ type, listener, capture: capture(options) })
   }
   addEventListener(type, listener, options)
 }
-window.removeEventListener = (type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions) => {
+window.removeEventListener = (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions) => {
   const index = indexOfListener(type, listener, options)
   if (index !== -1) {
     windowListeners.splice(index, 1)

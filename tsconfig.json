@@ -1,32 +1,20 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2017",
     "module": "esnext",
-    "moduleResolution": "node",
-    "outDir": "./dist/types",
-    "declaration": true,
-    "sourceMap": true,
-    "strict": true,
-    "newLine": "lf",
-    "removeComments": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "typeRoots": [
-      "./node_modules/@types"
-    ],
+    "moduleResolution": "bundler",
     "lib": [
       "dom",
       "es2017"
-    ]
+    ],
+    "types": [],
+    "strict": true,
+    "noUnusedLocals": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "newLine": "lf"
   },
   "include": [
-    "./src/**/*",
-    "./node_modules/@types"
-  ],
-  "exclude": [
-    "./node_modules",
-    "./dist",
-    "./demo",
-    "./dev"
+    "./src/**/*"
   ]
 }
