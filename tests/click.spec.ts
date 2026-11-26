@@ -857,6 +857,22 @@ test.describe('repeat', () => {
     await pressFor(page, 'repeatOnce', 600)
     await expectCallsAfter(page, 200, 'repeatOnce', [null])
   })
+
+  test('with once, a tap leaves nothing listening once it has fired', async ({ page }) => {
+    const repeatOnce = page.getByTestId('repeatOnce')
+    await repeatOnce.scrollIntoViewIfNeeded()
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'repeatOnce'))
+    await expectCalls(page, 'repeatOnce', [null])
+    // The binding is gone, so the next tap's touchend is the browser's again.
+    await repeatOnce.evaluate((el) => {
+      const prevented: boolean[] = []
+      Object.assign(window, { touchEndsPrevented: prevented })
+      el.addEventListener('touchend', event => { prevented.push(event.defaultPrevented) })
+    })
+    await touch.tap(await finger(page, 'repeatOnce'))
+    expect(await page.evaluate(() => (window as unknown as { touchEndsPrevented: boolean[] }).touchEndsPrevented)).toEqual([false])
+  })
 })
 
 test.describe('handler errors', () => {

@@ -264,8 +264,10 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
     }
 
     const touch = event.changedTouches[0]
-    begin(touch.clientX, touch.clientY, touch.identifier)
+    // Before `begin`: starting the press can end it (a `repeat.once` fires and removes itself), and ending it removes
+    // these listeners, so they must already be in place.
     unlistenPress = followTouch(touch.target)
+    begin(touch.clientX, touch.clientY, touch.identifier)
   }
 
   const onTouchMove = (event: TouchEvent) => {
