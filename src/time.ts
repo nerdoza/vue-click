@@ -1,4 +1,5 @@
-const timeSplitRegex = /^(\d+)?(m|s|ms)?$/i
+// A number of milliseconds, seconds or minutes: the number is required, the unit isn't (milliseconds by default).
+const timeSplitRegex = /^(\d+)(m|s|ms)?$/i
 
 export const IsTime = (arg: string = '') => {
   return timeSplitRegex.test(arg)

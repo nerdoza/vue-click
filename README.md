@@ -88,6 +88,8 @@ Add a time after the behavior or modifier to change its default:
 
 The units are `ms`, `s` and `m`, and a bare number is milliseconds (`v-click.throttle.200`). When a directive has both a behavior and a modifier, the time applies to both (`v-click.double.throttle.1s`).
 
+A unit needs its number: `v-click.hold.s` isn't a time. An unknown modifier like that, or a second behavior, modifier or time, logs a warning when the directive mounts.
+
 ## Arguments
 
 The directive's argument is passed to the handler as a string:

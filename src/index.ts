@@ -636,6 +636,10 @@ const bindingKey = (binding: DirectiveBinding, vnode: VNode) => vnode.dirs?.inde
 export const ClickDirective: Directive = {
   mounted (el: HTMLElement, binding, vnode) {
     const bindingOptions = ParseBinding(binding)
+    if (bindingOptions.problems.length > 0) {
+      const directive = 'v-click' + (binding.arg !== undefined ? `:${binding.arg}` : '') + Object.keys(binding.modifiers).map(modifier => `.${modifier}`).join('')
+      console.warn(`[vue-click] ${directive}: ${bindingOptions.problems.join('; ')}.`)
+    }
     // Checked again on dispatch, which a debounce does later: disabling the element drops a pending one.
     const modifier = bindModifier(bindingOptions, () => {
       if (!isDisabled(el)) {
