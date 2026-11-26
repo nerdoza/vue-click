@@ -106,7 +106,7 @@
 
       <section>
         <h2>Disabled</h2>
-        <p>Nothing fires while the button is <code>disabled</code>.</p>
+        <p>Clicks are ignored while the button is <code>disabled</code>.</p>
         <label><input type="checkbox" v-model="disabled"> disabled</label>
         <button :disabled="disabled" v-click="() => hit('disabled')"><code>v-click</code><hit-count :n="hits.disabled"></hit-count></button>
       </section>
