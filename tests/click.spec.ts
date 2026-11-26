@@ -797,6 +797,68 @@ test.describe('the element\'s state, shared by its directives', () => {
   })
 })
 
+test.describe('repeat', () => {
+  const countOf = async (page: Page, id: string) => (await callsOf(page, id)).length
+
+  test('fires on press, then repeatedly while held, and stops on release', async ({ page }) => {
+    const repeat = page.getByTestId('repeat')
+    await repeat.scrollIntoViewIfNeeded()
+    await expect(repeat).toHaveAttribute('data-vc-bind-repeat', '')
+    await pointAt(page, 'repeat')
+    await page.mouse.down()
+    expect(await countOf(page, 'repeat')).toBe(1)
+    // Again at 300ms, then every 100ms: about six by 700ms.
+    await page.waitForTimeout(700)
+    await page.mouse.up()
+    const held = await countOf(page, 'repeat')
+    expect(held).toBeGreaterThanOrEqual(4)
+    await expectCallsAfter(page, 300, 'repeat', Array(held).fill(null))
+  })
+
+  test('a short press fires once', async ({ page }) => {
+    await page.getByTestId('repeat').scrollIntoViewIfNeeded()
+    await click(page, 'repeat')
+    await expectCallsAfter(page, 500, 'repeat', [null])
+  })
+
+  test('a held touch repeats too', async ({ page }) => {
+    await page.getByTestId('repeat').scrollIntoViewIfNeeded()
+    const touch = await touchscreen(page)
+    await touch.start(await finger(page, 'repeat'))
+    await page.waitForTimeout(600)
+    await touch.end()
+    expect(await countOf(page, 'repeat')).toBeGreaterThanOrEqual(3)
+  })
+
+  test('sliding away stops it', async ({ page }) => {
+    await page.getByTestId('repeat').scrollIntoViewIfNeeded()
+    const { x, y } = await pointAt(page, 'repeat')
+    await page.mouse.down()
+    await page.mouse.move(x + 40, y, { steps: 4 })
+    await expectCallsAfter(page, 600, 'repeat', [null])
+    await page.mouse.up()
+  })
+
+  test('the time sets the interval', async ({ page }) => {
+    await page.getByTestId('repeat50').scrollIntoViewIfNeeded()
+    // At 0 and 300ms, then every 50ms: about nine by 650ms.
+    await pressFor(page, 'repeat50', 650)
+    expect(await countOf(page, 'repeat50')).toBeGreaterThanOrEqual(6)
+  })
+
+  test('keyboard activation fires it once', async ({ page }) => {
+    await page.getByTestId('repeat').focus()
+    await page.keyboard.press('Enter')
+    await expectCallsAfter(page, 500, 'repeat', [null])
+  })
+
+  test('with once, it fires a single time however long it is held', async ({ page }) => {
+    await page.getByTestId('repeatOnce').scrollIntoViewIfNeeded()
+    await pressFor(page, 'repeatOnce', 600)
+    await expectCallsAfter(page, 200, 'repeatOnce', [null])
+  })
+})
+
 test.describe('handler errors', () => {
   test('reach the app\'s errorHandler, thrown or rejected, as with v-on', async ({ page }) => {
     const uncaught: string[] = []
