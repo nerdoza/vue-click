@@ -33,7 +33,7 @@ With the Options API, add `directives: { click: ClickDirective }` to the compone
 
 ## CDN
 
-Without a build step, load the UMD build from [unpkg](https://unpkg.com/) or [jsDelivr](https://www.jsdelivr.com/package/npm/vue-click). It defines a `VueClick` global:
+Without a build step, load the UMD build from [unpkg](https://unpkg.com/) or [jsDelivr](https://www.jsdelivr.com/package/npm/vue-click), after Vue. It defines a `VueClick` global:
 
 ```html
 <script src="https://unpkg.com/vue@3"></script>
@@ -55,6 +55,8 @@ Without a build step, load the UMD build from [unpkg](https://unpkg.com/) or [js
 `v-click` takes a function. Unlike `v-on`, it doesn't take inline statements, so `v-click="remove(item)"` would call `remove` while rendering. To pass a value, use an arrow function: `v-click="() => remove(item)"`.
 
 Each `v-click` takes at most one behavior, which sets when it fires, and one modifier, which limits how often. You can put several on one element (see [Combining](#combining)). The handler and its argument can change after mount, and when the value isn't a function, nothing fires. The behavior, modifier and time are fixed at mount.
+
+As with `v-on`, an error the handler throws, or a promise it returns that rejects, goes to `onErrorCaptured` and `app.config.errorHandler`.
 
 ## Behaviors
 

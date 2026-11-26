@@ -16,6 +16,15 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js']
   },
+  // Vue is a peer dependency: the bundle uses the app's own copy, through `require('vue')` or the `Vue` global.
+  externals: {
+    vue: {
+      commonjs: 'vue',
+      commonjs2: 'vue',
+      amd: 'vue',
+      root: 'Vue'
+    }
+  },
   output: {
     filename: 'index.js',
     path: path.resolve(__dirname, '../dist'),
