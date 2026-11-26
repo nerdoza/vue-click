@@ -338,6 +338,8 @@ const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, [
 const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
   const onRelease = onEdge(fire)
   const following = new Set<Teardown>()
+  /** Fingers lifted together share one `touchend`, which is one release, however many of them were followed. */
+  let lastRelease: TouchEvent | null = null
 
   // A touch ends on the node it started on, even once that node has left the DOM (re-rendered mid-press, say), and
   // from a detached node its `touchend` never reaches `el`, so each touch is followed on its own node instead.
@@ -355,10 +357,15 @@ const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
         following.delete(stop)
       }
       const unlisten = listen(target, ['touchend', 'touchcancel'], (end: TouchEvent) => {
+        // A scripted event naming this touch must not stop the following of the real one.
+        if (!end.isTrusted) {
+          return
+        }
         for (let j = 0; j < end.changedTouches.length; j++) {
           if (end.changedTouches[j].identifier === identifier) {
             stop()
-            if (end.type === 'touchend') {
+            if (end.type === 'touchend' && end !== lastRelease) {
+              lastRelease = end
               onRelease(end)
             }
             return
