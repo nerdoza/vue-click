@@ -52,7 +52,7 @@ window.removeEventListener = (type: string, listener: EventListenerOrEventListen
 const ids = [
   'single', 'singleArg', 'nested', 'double', 'double1s', 'hold', 'hold1s', 'holdArg', 'tiny', 'press', 'pressOnce',
   'release', 'once', 'throttle', 'throttleArg', 'debounce', 'disabled', 'comboSingle', 'comboHold', 'bound', 'swapA',
-  'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel'
+  'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease'
 ]
 const handlers: Record<string, (arg: unknown) => void> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
@@ -94,6 +94,14 @@ const app = createApp({
     <button data-testid="relabel" v-click="h.relabel">
       <span v-if="state.altLabel">relabelled</span>
       <span v-else data-testid="relabelLabel">relabel</span>
+    </button>
+    <button data-testid="relabelHold" v-click.hold.1s="h.relabelHold">
+      <span v-if="state.altLabel">relabelled</span>
+      <span v-else data-testid="relabelHoldLabel">relabel hold.1s</span>
+    </button>
+    <button data-testid="relabelRelease" v-click.release="h.relabelRelease">
+      <span v-if="state.altLabel">relabelled</span>
+      <span v-else data-testid="relabelReleaseLabel">relabel release</span>
     </button>
   `
 })

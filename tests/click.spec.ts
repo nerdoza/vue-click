@@ -437,15 +437,45 @@ test.describe('multi-touch', () => {
     await expect.poll(async () => await callsOf(page, 'tileA')).toEqual([null])
     await touch.end()
   })
+})
 
-  test('a touch that ended out of sight does not swallow the next tap', async ({ page }) => {
+// Re-rendering the touched child mid-press sends the rest of the touch to the detached node, which never reaches the
+// element on its own.
+test.describe('content re-rendered mid-press', () => {
+  test('a tap still clicks, and so does the next one', async ({ page }) => {
     const touch = await touchscreen(page)
-    // Replacing the touched child mid-press sends its touchend to the detached node, past the element.
     await touch.start(await finger(page, 'relabelLabel'))
     await setState(page, { altLabel: true })
     await touch.end()
-    await touch.tap(await finger(page, 'relabel'))
     await expectCalls(page, 'relabel', [null])
+    await touch.tap(await finger(page, 'relabel'))
+    await expectCalls(page, 'relabel', [null, null])
+  })
+
+  test('a hold released early never fires and clears the active state', async ({ page }) => {
+    const relabelHold = page.getByTestId('relabelHold')
+    const touch = await touchscreen(page)
+    await touch.start(await finger(page, 'relabelHoldLabel'))
+    await setState(page, { altLabel: true })
+    await expect(relabelHold).toHaveAttribute('data-vc-state-active', '')
+    await page.waitForTimeout(300)
+    await touch.end()
+    await expect(relabelHold).not.toHaveAttribute('data-vc-state-active')
+    await expectCallsAfter(page, 1000, 'relabelHold', [])
+  })
+
+  test('a release still fires, from the touch itself', async ({ page }) => {
+    // A touchend that nothing cancels is followed by emulated mouse events, whose mouseup would fire the release too.
+    await page.evaluate(() => {
+      Object.assign(window, { emulatedMouseUps: 0 })
+      window.addEventListener('mouseup', () => { (window as unknown as { emulatedMouseUps: number }).emulatedMouseUps++ }, true)
+    })
+    const touch = await touchscreen(page)
+    await touch.start(await finger(page, 'relabelReleaseLabel'))
+    await setState(page, { altLabel: true })
+    await touch.end()
+    await expectCalls(page, 'relabelRelease', [null])
+    expect(await page.evaluate(() => (window as unknown as { emulatedMouseUps: number }).emulatedMouseUps)).toBe(0)
   })
 })
 
