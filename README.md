@@ -1,7 +1,7 @@
 # Vue Click
 [![Publish](https://github.com/nerdoza/vue-click/actions/workflows/publish.yml/badge.svg)](https://github.com/nerdoza/vue-click/actions/workflows/publish.yml)
 
-A `v-click` directive for Vue 3. It adds double click, hold, press and release behaviors, plus `once`, `throttle` and `debounce` modifiers. Mouse and touch input behave the same way, and keyboard activation works for plain clicks.
+A `v-click` directive for Vue 3. It adds double click, hold, repeat, press and release behaviors, plus `once`, `throttle` and `debounce` modifiers. Mouse and touch input behave the same way, and keyboard activation works for plain clicks.
 
 **[Try the demo](https://nerdoza.github.io/vue-click/)**
 
@@ -67,6 +67,7 @@ As with `v-on`, an error the handler throws, or a promise it returns that reject
 | `hold` | the element has been held down for the time | 300ms |
 | `press` | the element is pressed (`mousedown` or `touchstart`); it doesn't wait for the release | |
 | `release` | the pointer is released over the element (`mouseup` or `touchend`) | |
+| `repeat` | the element is pressed, then at every interval while it's held, starting after 300ms | 100ms (the interval) |
 
 ## Modifiers
 
@@ -84,6 +85,7 @@ Add a time after the behavior or modifier to change its default:
 <button v-click.double.500ms="zoomIn">
 <button v-click.hold.2s="clearAll">
 <button v-click.debounce.1m="autosave">
+<button v-click.repeat.50ms="scrollDown">
 ```
 
 The units are `ms`, `s` and `m`, and a bare number is milliseconds (`v-click.throttle.200`). When a directive has both a behavior and a modifier, the time applies to both (`v-click.double.throttle.1s`).
@@ -126,8 +128,8 @@ A press on a `v-click` element inside another fires both. Add `stop` to the inne
 ## Input handling
 
 - **Mouse buttons:** only the primary button counts. On macOS and iPadOS, a <kbd>Control</kbd>-click is a right click, so it's ignored too.
-- **Cancelled presses:** a click, double click or hold is cancelled if the pointer moves more than 10px, is released off the element, or the browser cancels the touch. A second finger on the element cancels it too.
-- **Keyboard:** <kbd>Enter</kbd>, <kbd>Space</kbd> and screen reader activation trigger a plain `v-click`, modifier included. `double`, `hold`, `press` and `release` are pointer gestures, so make their actions reachable another way too.
+- **Cancelled presses:** a click, double click, hold or repeat is cancelled if the pointer moves more than 10px, is released off the element, or the browser cancels the touch. A second finger on the element cancels it too.
+- **Keyboard:** <kbd>Enter</kbd>, <kbd>Space</kbd> and screen reader activation trigger a plain `v-click`, modifier included, and fire a `repeat` once. `double`, `hold`, `press` and `release` are pointer gestures, so make their actions reachable another way too.
 - **Scripted events:** events dispatched from scripts (`el.click()`, `dispatchEvent()`) are ignored.
 - **Disabled elements:** presses and clicks on a `disabled` element are ignored, and a `debounce` that comes due while the element is disabled is dropped.
 - **Default handling:** `v-click` cancels the browser's default handling of presses on the element. The element doesn't take focus on mouse down, and a touch that starts on it doesn't scroll the page.
@@ -139,7 +141,7 @@ A press on a `v-click` element inside another fires both. Add `stop` to the inne
 
 | Attribute | Present |
 | --- | --- |
-| `data-vc-bind-click`, `-double`, `-hold`, `-press`, `-release` | while that behavior is bound; the value is its modifier, if any (`once`, `throttle`, `debounce`) |
+| `data-vc-bind-click`, `-double`, `-hold`, `-repeat`, `-press`, `-release` | while that behavior is bound; the value is its modifier, if any (`once`, `throttle`, `debounce`) |
 | `data-vc-state-active` | while the element is pressed |
 | `data-vc-state-deactivated` | once every `v-click` on the element is a `once` that has fired and removed itself |
 

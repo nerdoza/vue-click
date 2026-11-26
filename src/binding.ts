@@ -12,7 +12,8 @@ export enum Behavior {
   Double = 'double',
   Hold = 'hold',
   Press = 'press',
-  Release = 'release'
+  Release = 'release',
+  Repeat = 'repeat'
 }
 
 export enum Modifier {

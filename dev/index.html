@@ -15,7 +15,7 @@
   <div id="app">
     <header>
       <h1>vue-click</h1>
-      <p>A <code>v-click</code> directive for Vue 3 with double click, hold, press and release behaviors, and
+      <p>A <code>v-click</code> directive for Vue 3 with double click, hold, repeat, press and release behaviors, and
         <code>once</code>, <code>throttle</code> and <code>debounce</code> modifiers.</p>
       <p><a href="https://github.com/nerdoza/vue-click#readme">Documentation</a> ·
         <a href="https://www.npmjs.com/package/vue-click">npm</a> ·
@@ -49,6 +49,14 @@
           cancels it.</p>
         <button v-click.hold="() => hit('hold')"><code>v-click.hold</code><hit-count :n="hits.hold"></hit-count></button>
         <button v-click.hold.1s="() => hit('hold1s')"><code>v-click.hold.1s</code><hit-count :n="hits.hold1s"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Repeat</h2>
+        <p>Fires on press, then again every 100ms (or the time you set) while held, starting after 300ms. Made for
+          steppers and scroll arrows.</p>
+        <button v-click.repeat="() => hit('repeat')"><code>v-click.repeat</code><hit-count :n="hits.repeat"></hit-count></button>
+        <button v-click.repeat.50ms="() => hit('repeat50')"><code>v-click.repeat.50ms</code><hit-count :n="hits.repeat50"></hit-count></button>
       </section>
 
       <section>

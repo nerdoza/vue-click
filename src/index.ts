@@ -2,6 +2,8 @@ import type { DirectiveBinding, ObjectDirective, Plugin, VNode } from 'vue'
 import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
 const defaultEventTimeout = 300
+/** How often (in ms) a held `repeat` fires, once it starts repeating. */
+const defaultRepeatInterval = 100
 /** How far (in CSS pixels) a pointer may travel from where it pressed before the gesture is cancelled. */
 const defaultMoveTolerance = 10
 /** How long (in ms) after pointer input on an element a `click` on it counts as that pointer's own click. */
@@ -12,7 +14,8 @@ const dataBindPostfixes: Record<Behavior, string> = {
   [Behavior.Double]: 'Double',
   [Behavior.Hold]: 'Hold',
   [Behavior.Press]: 'Press',
-  [Behavior.Release]: 'Release'
+  [Behavior.Release]: 'Release',
+  [Behavior.Repeat]: 'Repeat'
 }
 const dataStatePrefix = 'vcState'
 const dataStateActivePostfix = 'Active'
@@ -261,8 +264,10 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
     }
 
     const touch = event.changedTouches[0]
-    begin(touch.clientX, touch.clientY, touch.identifier)
+    // Before `begin`: starting the press can end it (a `repeat.once` fires and removes itself), and ending it removes
+    // these listeners, so they must already be in place.
     unlistenPress = followTouch(touch.target)
+    begin(touch.clientX, touch.clientY, touch.identifier)
   }
 
   const onTouchMove = (event: TouchEvent) => {
@@ -438,8 +443,18 @@ const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
     }
   })
 
-  // Keyboard and assistive-tech activation reach the element as a `click` with no pointer press before it.
-  const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
+  const unlistenClick = listenForActivation(el, tracker, fire)
+
+  return () => {
+    tracker.teardown()
+    clickTimer.clear()
+    unlistenClick()
+  }
+}
+
+/** Fires on keyboard and assistive-tech activation, which reach `el` as a `click` with no pointer press before it. */
+const listenForActivation = (el: HTMLElement, tracker: PressTracker, fire: Fire): Teardown => {
+  return listen(el, ['click'], (event: MouseEvent) => {
     // The click a claimed mouse press makes is a mouse click (`detail` above 0). A keyboard click can arrive before the
     // claim is cleared, since input is handled ahead of the timer that clears it, so it mustn't be taken for one.
     const claimedPressClick = event.detail > 0 && tracker.claims.mouse()
@@ -447,12 +462,6 @@ const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
       fire()
     }
   })
-
-  return () => {
-    tracker.teardown()
-    clickTimer.clear()
-    unlistenClick()
-  }
 }
 
 const doubleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
@@ -490,6 +499,44 @@ const holdBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
   return () => {
     tracker.teardown()
     holdTimer.clear()
+  }
+}
+
+const repeatBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
+  const interval = bindingOptions.time ?? defaultRepeatInterval
+  const delayTimer = createTimer()
+  let repeating: number | null = null
+  let held = false
+
+  const stop = () => {
+    held = false
+    delayTimer.clear()
+    if (repeating !== null) {
+      clearInterval(repeating)
+      repeating = null
+    }
+  }
+
+  const tracker = trackPress(el, () => {
+    held = true
+    fire()
+    // Firing can end the press: a `once` removes the binding, which tears this down.
+    if (held) {
+      delayTimer.start(defaultEventTimeout, () => {
+        fire()
+        if (held) {
+          repeating = window.setInterval(fire, interval)
+        }
+      })
+    }
+  }, stop)
+
+  const unlistenClick = listenForActivation(el, tracker, fire)
+
+  return () => {
+    tracker.teardown()
+    stop()
+    unlistenClick()
   }
 }
 
@@ -587,7 +634,8 @@ const behaviors: Record<Behavior, BehaviorBinder> = {
   [Behavior.Double]: doubleBehavior,
   [Behavior.Hold]: holdBehavior,
   [Behavior.Press]: pressBehavior,
-  [Behavior.Release]: releaseBehavior
+  [Behavior.Release]: releaseBehavior,
+  [Behavior.Repeat]: repeatBehavior
 }
 
 interface ModifierHandle {
