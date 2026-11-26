@@ -30,6 +30,15 @@ export interface BindingOptions {
   /** Claim the input that starts inside the element, so v-click on the elements around it ignores it. */
   stop: boolean
   dispatch: Function | (() => void)
+  /** What's wrong with the modifiers, if anything, for a warning when the directive mounts. */
+  problems: string[]
+}
+
+/** Notes a problem when a kind of modifier was given more than once: only the last one applies. */
+const checkOne = (problems: string[], kind: string, given: string[]) => {
+  if (given.length > 1) {
+    problems.push(`more than one ${kind} (${given.join(', ')}); only "${given[given.length - 1]}" applies`)
+  }
 }
 
 const enumHasValue = (enumerator: object, value: string) => {
@@ -44,8 +53,10 @@ export const ParseBinding = (binding: DirectiveBinding) => {
     argument: null,
     once: false,
     stop: false,
-    dispatch: () => { }
+    dispatch: () => { },
+    problems: []
   }
+  const given = { times: [] as string[], behaviors: [] as string[], modifiers: [] as string[] }
 
   for (const modKey in binding.modifiers) {
     const mods = modKey.split(':')
@@ -55,14 +66,22 @@ export const ParseBinding = (binding: DirectiveBinding) => {
 
     if (IsTime(mods[0])) {
       result.time = TimeParser(mods[0])
+      given.times.push(mods[0])
     } else if (enumHasValue(Behavior, mods[0])) {
       result.behavior = mods[0] as Behavior
+      given.behaviors.push(mods[0])
     } else if (enumHasValue(Modifier, mods[0])) {
       result.modifier = mods[0] as Modifier
+      given.modifiers.push(mods[0])
     } else if (mods[0] === 'stop') {
       result.stop = true
+    } else {
+      result.problems.push(`unknown modifier "${mods[0]}", which is ignored`)
     }
   }
+  checkOne(result.problems, 'behavior', given.behaviors)
+  checkOne(result.problems, 'modifier', given.modifiers)
+  checkOne(result.problems, 'time', given.times)
 
   if (typeof binding.arg !== 'undefined') {
     result.argument = binding.arg

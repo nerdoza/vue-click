@@ -54,9 +54,9 @@ const ids = [
   'single', 'singleArg', 'nested', 'double', 'double1s', 'hold', 'hold1s', 'holdArg', 'tiny', 'press', 'pressOnce',
   'release', 'once', 'throttle', 'throttleArg', 'debounce', 'disabled', 'comboSingle', 'comboHold', 'bound', 'swapA',
   'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease',
-  'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop',
-  'outerRelease', 'releaseStopChild', 'pressOnceStopChild', 'debounceDisable', 'onceThenHold', 'holdAfterOnce', 'holdThenOnce', 'onceAfterHold',
-  'onceA', 'onceB'
+  'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop', 'outerRelease',
+  'releaseStopChild', 'pressOnceStopChild', 'debounceDisable', 'onceThenHold', 'holdAfterOnce', 'holdThenOnce',
+  'onceAfterHold', 'onceA', 'onceB', 'bareUnit', 'typo', 'twoBehaviors'
 ]
 const handlers: Record<string, (arg: unknown) => unknown> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
@@ -127,6 +127,9 @@ const app = createApp({
     <button data-testid="debounceDisable" :disabled="state.debounceDisabled" v-click.debounce.500ms="h.debounceDisable">debounce, then disabled</button>
     <button data-testid="onceThenHold" v-click.once="h.onceThenHold" v-click.hold.500ms="h.holdAfterOnce">once + hold</button>
     <button data-testid="holdThenOnce" v-click.hold.500ms="h.holdThenOnce" v-click.once="h.onceAfterHold">hold + once</button>
+    <button data-testid="bareUnit" v-click.hold.s="h.bareUnit">hold.s</button>
+    <button data-testid="typo" v-click.dubble="h.typo">dubble</button>
+    <button data-testid="twoBehaviors" v-click.double.hold.1s.2s="h.twoBehaviors">double.hold.1s.2s</button>
     <button data-testid="twoOnces" v-click.once="h.onceA" v-click.press.once="h.onceB">once + press.once</button>
     <button data-testid="throws" v-click="h.throws">throws</button>
     <button data-testid="rejects" v-click="h.rejects">rejects</button>

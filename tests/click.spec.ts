@@ -295,9 +295,32 @@ test.describe('behaviors', () => {
     await expectCalls(page, 'debounceDisable', [null])
   })
 
-  test('time units parse to milliseconds', async ({ page }) => {
-    const times = await page.evaluate(() => ['20', '20ms', '2s', '1m'].map(time => window.TimeParser(time)))
-    expect(times).toEqual([20, 20, 2000, 60000])
+  test('time units parse to milliseconds, and a unit alone is no time', async ({ page }) => {
+    const times = await page.evaluate(() => ['20', '20ms', '2s', '1m', 's', 'ms', 'm'].map(time => window.TimeParser(time)))
+    expect(times).toEqual([20, 20, 2000, 60000, null, null, null])
+  })
+
+  test('a unit alone leaves the default time', async ({ page }) => {
+    await pressFor(page, 'bareUnit', 50)
+    await expectCallsAfter(page, 400, 'bareUnit', [])
+    await pressFor(page, 'bareUnit', 500)
+    await expectCalls(page, 'bareUnit', [null])
+  })
+
+  test('malformed modifiers are named in a warning, once each', async ({ page }) => {
+    const warnings: string[] = []
+    page.on('console', message => {
+      if (message.type() === 'warning' && message.text().startsWith('[vue-click]')) {
+        warnings.push(message.text())
+      }
+    })
+    await page.reload()
+    await expect(page.getByTestId('single')).toBeVisible()
+    expect(warnings).toEqual([
+      '[vue-click] v-click.hold.s: unknown modifier "s", which is ignored.',
+      '[vue-click] v-click.dubble: unknown modifier "dubble", which is ignored.',
+      '[vue-click] v-click.double.hold.1s.2s: more than one behavior (double, hold); only "hold" applies; more than one time (1s, 2s); only "2s" applies.'
+    ])
   })
 
   test('data attributes mark the binding and the active state', async ({ page }) => {
