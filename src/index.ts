@@ -568,22 +568,25 @@ interface ModifierHandle {
   teardown: Teardown
 }
 
-const onceModifier = (bindingOptions: BindingOptions): ModifierHandle => ({
+/** Calls the binding's handler, unless the element has been disabled since the input arrived. */
+type Dispatch = () => void
+
+const onceModifier = (dispatch: Dispatch): ModifierHandle => ({
   fire: (removeBinding) => {
     removeBinding()
-    bindingOptions.dispatch()
+    dispatch()
   },
   teardown: () => {}
 })
 
-const throttleModifier = (bindingOptions: BindingOptions): ModifierHandle => {
+const throttleModifier = (bindingOptions: BindingOptions, dispatch: Dispatch): ModifierHandle => {
   const throttleTime = bindingOptions.time ?? defaultEventTimeout
   const throttleTimer = createTimer()
 
   return {
     fire: () => {
       if (!throttleTimer.pending()) {
-        bindingOptions.dispatch()
+        dispatch()
       }
       throttleTimer.start(throttleTime)
     },
@@ -591,28 +594,30 @@ const throttleModifier = (bindingOptions: BindingOptions): ModifierHandle => {
   }
 }
 
-const debounceModifier = (bindingOptions: BindingOptions): ModifierHandle => {
+const debounceModifier = (bindingOptions: BindingOptions, dispatch: Dispatch): ModifierHandle => {
   const debounceTime = bindingOptions.time ?? defaultEventTimeout
   const debounceTimer = createTimer()
 
   return {
-    fire: () => debounceTimer.start(debounceTime, () => bindingOptions.dispatch()),
+    fire: () => debounceTimer.start(debounceTime, dispatch),
     teardown: debounceTimer.clear
   }
 }
 
-const bindModifier = (bindingOptions: BindingOptions): ModifierHandle => {
+const bindModifier = (bindingOptions: BindingOptions, dispatch: Dispatch): ModifierHandle => {
   switch (bindingOptions.modifier) {
     case Modifier.Once:
-      return onceModifier(bindingOptions)
+      return onceModifier(dispatch)
     case Modifier.Throttle:
-      return throttleModifier(bindingOptions)
+      return throttleModifier(bindingOptions, dispatch)
     case Modifier.Debounce:
-      return debounceModifier(bindingOptions)
+      return debounceModifier(bindingOptions, dispatch)
     default:
-      return { fire: () => bindingOptions.dispatch(), teardown: () => {} }
+      return { fire: dispatch, teardown: () => {} }
   }
 }
+
+const isDisabled = (el: HTMLElement) => (el as { disabled?: unknown }).disabled === true
 
 interface ClickBinding {
   bindingOptions: BindingOptions
@@ -627,7 +632,12 @@ const bindingKey = (binding: DirectiveBinding, vnode: VNode) => vnode.dirs?.inde
 export const ClickDirective: Directive = {
   mounted (el: HTMLElement, binding, vnode) {
     const bindingOptions = ParseBinding(binding)
-    const modifier = bindModifier(bindingOptions)
+    // Checked again on dispatch, which a debounce does later: disabling the element drops a pending one.
+    const modifier = bindModifier(bindingOptions, () => {
+      if (!isDisabled(el)) {
+        bindingOptions.dispatch()
+      }
+    })
     const dataBinding = dataBindingPrefix + dataBindPostfixes[bindingOptions.behavior]
     const deactivate = bindActiveState(el)
     const clickActions = guardClickActions(el)
@@ -641,7 +651,7 @@ export const ClickDirective: Directive = {
       delete (el.dataset[dataBinding])
     }
     const teardownBehavior = behaviors[bindingOptions.behavior](el, bindingOptions, () => {
-      if ((el as { disabled?: unknown }).disabled !== true) {
+      if (!isDisabled(el)) {
         modifier.fire(removeBinding)
       }
     })

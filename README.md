@@ -127,7 +127,7 @@ A press on a `v-click` element inside another fires both. Add `stop` to the inne
 - **Cancelled presses:** a click, double click or hold is cancelled if the pointer moves more than 10px, is released off the element, or the browser cancels the touch. A second finger on the element cancels it too.
 - **Keyboard:** <kbd>Enter</kbd>, <kbd>Space</kbd> and screen reader activation trigger a plain `v-click`, modifier included. `double`, `hold`, `press` and `release` are pointer gestures, so make their actions reachable another way too.
 - **Scripted events:** events dispatched from scripts (`el.click()`, `dispatchEvent()`) are ignored.
-- **Disabled elements:** presses and clicks on a `disabled` element are ignored. Disabling an element doesn't cancel a `debounce` that's already waiting, though; it still fires.
+- **Disabled elements:** presses and clicks on a `disabled` element are ignored, and a `debounce` that comes due while the element is disabled is dropped.
 - **Default handling:** `v-click` cancels the browser's default handling of presses on the element. The element doesn't take focus on mouse down, and a touch that starts on it doesn't scroll the page.
 - **Click actions:** a mouse click or tap on the element doesn't perform the browser's click action: a button doesn't submit its form, a link doesn't follow its `href`, and a checkbox doesn't toggle. Keyboard activation still does, so give buttons in a form `type="button"` and submit from the handler. A `@click` on the same element runs for mouse clicks and keyboard activation, but not for taps.
 

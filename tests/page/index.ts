@@ -24,7 +24,8 @@ const state = reactive({
   useB: false,
   showHold: true,
   showDebounce: true,
-  altLabel: false
+  altLabel: false,
+  debounceDisabled: false
 })
 
 // Count the listeners added to `window`, so the suite can tell that an unmount removed them.
@@ -54,7 +55,7 @@ const ids = [
   'release', 'once', 'throttle', 'throttleArg', 'debounce', 'disabled', 'comboSingle', 'comboHold', 'bound', 'swapA',
   'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease',
   'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop',
-  'outerRelease', 'releaseStopChild', 'pressOnceStopChild'
+  'outerRelease', 'releaseStopChild', 'pressOnceStopChild', 'debounceDisable'
 ]
 const handlers: Record<string, (arg: unknown) => unknown> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
@@ -122,6 +123,7 @@ const app = createApp({
       <button data-testid="releaseStopChild" v-click.stop="h.releaseStopChild">inner.stop</button>
       <button data-testid="pressOnceStopChild" v-click.press.once.stop="h.pressOnceStopChild">inner.press.once.stop</button>
     </div>
+    <button data-testid="debounceDisable" :disabled="state.debounceDisabled" v-click.debounce.500ms="h.debounceDisable">debounce, then disabled</button>
     <button data-testid="throws" v-click="h.throws">throws</button>
     <button data-testid="rejects" v-click="h.rejects">rejects</button>
   `
