@@ -41,6 +41,15 @@ const center = async (locator: Locator): Promise<Point> => {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
 }
 
+/** A point in the margin of an element with others inside it, clear of them. */
+const margin = async (page: Page, testId: string): Promise<Point> => {
+  const box = await page.getByTestId(testId).boundingBox()
+  if (box === null) {
+    throw new Error('element is not visible')
+  }
+  return { x: box.x + 6, y: box.y + 6 }
+}
+
 const callsOf = async (page: Page, id: string) => {
   return await page.evaluate((id) => window.calls.filter(call => call.id === id).map(call => call.arg), id)
 }
@@ -660,12 +669,41 @@ test.describe('nested elements', () => {
   })
 
   test('the element around still gets its own presses', async ({ page }) => {
-    const box = await page.getByTestId('outer').boundingBox()
-    if (box === null) {
-      throw new Error('element is not visible')
-    }
-    await page.mouse.click(box.x + 6, box.y + 6)
+    const { x, y } = await margin(page, 'outer')
+    await page.mouse.click(x, y)
     await expectCalls(page, 'outer', [null])
+  })
+
+  test('a finger held on a stop does not cancel a tap on the element around it', async ({ page }) => {
+    const touch = await touchscreen(page)
+    const held = await finger(page, 'innerStop', 1)
+    const tap = { ...await margin(page, 'outer'), id: 2 }
+    await touch.start(held)
+    await touch.start(held, tap)
+    await touch.end(tap)
+    await expectCalls(page, 'outer', [null])
+    await touch.end()
+  })
+
+  test('a keyboard click right after a press on a stop still reaches the element around', async ({ page }) => {
+    await click(page, 'innerStop')
+    await page.getByTestId('inner').focus()
+    await page.keyboard.press('Enter')
+    await expectCalls(page, 'inner', [null])
+    await expectCalls(page, 'outer', [null])
+  })
+
+  test('a press that starts on a stop never releases the element around it', async ({ page }) => {
+    // Released over the element around it, outside the stop.
+    await pointAt(page, 'releaseStopChild')
+    await page.mouse.down()
+    const { x, y } = await margin(page, 'outerRelease')
+    await page.mouse.move(x, y, { steps: 4 })
+    await page.mouse.up()
+    // Released on a press.once.stop, whose claim ends as it fires on the way down.
+    await pressFor(page, 'pressOnceStopChild', 50)
+    await expectCalls(page, 'pressOnceStopChild', [null])
+    await expectCallsAfter(page, 100, 'outerRelease', [])
   })
 })
 

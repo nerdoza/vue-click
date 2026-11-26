@@ -53,7 +53,8 @@ const ids = [
   'single', 'singleArg', 'nested', 'double', 'double1s', 'hold', 'hold1s', 'holdArg', 'tiny', 'press', 'pressOnce',
   'release', 'once', 'throttle', 'throttleArg', 'debounce', 'disabled', 'comboSingle', 'comboHold', 'bound', 'swapA',
   'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease',
-  'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop'
+  'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop',
+  'outerRelease', 'releaseStopChild', 'pressOnceStopChild'
 ]
 const handlers: Record<string, (arg: unknown) => void> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
@@ -113,6 +114,10 @@ const app = createApp({
       <button data-testid="inner" v-click="h.inner">inner</button>
       <button data-testid="innerStop" v-click.stop="h.innerStop"><span data-testid="innerStopLabel">inner.stop</span></button>
       <button data-testid="innerHoldStop" v-click.hold.stop="h.innerHoldStop">inner.hold.stop</button>
+    </div>
+    <div data-testid="outerRelease" class="outer" v-click.release="h.outerRelease">
+      <button data-testid="releaseStopChild" v-click.stop="h.releaseStopChild">inner.stop</button>
+      <button data-testid="pressOnceStopChild" v-click.press.once.stop="h.pressOnceStopChild">inner.press.once.stop</button>
     </div>
   `
 })

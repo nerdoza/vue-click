@@ -161,10 +161,11 @@ button[data-vc-state-active],
   touch-action: none;
 }
 
-.card-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
+button.card-label {
+  margin-top: 0;
+  padding: 0.25rem 0;
+  background: none;
+  border: none;
 }
 
 button[data-vc-state-deactivated] {
