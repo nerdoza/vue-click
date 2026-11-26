@@ -707,6 +707,17 @@ test.describe('nested elements', () => {
   })
 })
 
+test.describe('handler errors', () => {
+  test('reach the app\'s errorHandler, thrown or rejected, as with v-on', async ({ page }) => {
+    const uncaught: string[] = []
+    page.on('pageerror', error => uncaught.push(error.message))
+    await click(page, 'throws')
+    await click(page, 'rejects')
+    await expectCalls(page, 'errorHandler', ['thrown', 'rejected'])
+    expect(uncaught).toEqual([])
+  })
+})
+
 test.describe('keyboard and assistive tech', () => {
   test('Enter and Space each activate a single v-click once', async ({ page }) => {
     await page.getByTestId('single').focus()

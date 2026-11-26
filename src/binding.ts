@@ -1,5 +1,11 @@
-import { DirectiveBinding } from 'vue'
+import { callWithAsyncErrorHandling, type ComponentPublicInstance, type DirectiveBinding, type ErrorCodes } from 'vue'
 import { TimeParser, IsTime } from './time'
+
+/**
+ * `ErrorCodes.NATIVE_EVENT_HANDLER`, the code `v-on` reports handler errors under. Spelled out because `ErrorCodes` is
+ * a const enum, with no value at runtime, before Vue 3.4.
+ */
+const nativeEventHandler = 5 as ErrorCodes.NATIVE_EVENT_HANDLER
 
 export enum Behavior {
   Single = 'single',
@@ -63,7 +69,10 @@ export const ParseBinding = (binding: DirectiveBinding) => {
   }
 
   if (typeof binding.value === 'function') {
-    result.dispatch = () => binding.value(result.argument)
+    const handler: Function = binding.value
+    const instance = (binding.instance as ComponentPublicInstance | null)?.$ ?? null
+    // Like a `v-on` handler: what it throws or rejects with goes to `onErrorCaptured` and `app.config.errorHandler`.
+    result.dispatch = () => callWithAsyncErrorHandling(handler, instance, nativeEventHandler, [result.argument])
   }
 
   return result

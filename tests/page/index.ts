@@ -56,8 +56,11 @@ const ids = [
   'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop',
   'outerRelease', 'releaseStopChild', 'pressOnceStopChild'
 ]
-const handlers: Record<string, (arg: unknown) => void> = {}
+const handlers: Record<string, (arg: unknown) => unknown> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
+// Handlers that fail, for the app's errorHandler below.
+handlers.throws = () => { throw new Error('thrown') }
+handlers.rejects = async () => await Promise.reject(new Error('rejected'))
 
 Object.assign(window, {
   calls,
@@ -119,8 +122,13 @@ const app = createApp({
       <button data-testid="releaseStopChild" v-click.stop="h.releaseStopChild">inner.stop</button>
       <button data-testid="pressOnceStopChild" v-click.press.once.stop="h.pressOnceStopChild">inner.press.once.stop</button>
     </div>
+    <button data-testid="throws" v-click="h.throws">throws</button>
+    <button data-testid="rejects" v-click="h.rejects">rejects</button>
   `
 })
 
+app.config.errorHandler = (error) => {
+  calls.push({ id: 'errorHandler', arg: error instanceof Error ? error.message : error })
+}
 app.use(VueClick)
 app.mount('#app')
