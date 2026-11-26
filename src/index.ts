@@ -51,6 +51,35 @@ const listen = <E extends Event>(target: EventTarget, types: string[], listener:
   return () => types.forEach(type => target.removeEventListener(type, listener as EventListener, options))
 }
 
+/** Elements with a `v-click.stop`, and how many: they claim the input that starts inside them. */
+const claimingElements = new WeakMap<Node, number>()
+
+const claim = (el: HTMLElement): Teardown => {
+  claimingElements.set(el, (claimingElements.get(el) ?? 0) + 1)
+  let claimed = true
+  return () => {
+    if (claimed) {
+      claimed = false
+      const count = (claimingElements.get(el) ?? 1) - 1
+      if (count > 0) {
+        claimingElements.set(el, count)
+      } else {
+        claimingElements.delete(el)
+      }
+    }
+  }
+}
+
+/** Whether input aimed at `target` was claimed by a `v-click.stop` element inside `el`, so `el` leaves it alone. */
+const claimedInside = (el: HTMLElement, target: EventTarget | null) => {
+  for (let node = target as Node | null; node !== null && node !== el; node = node.parentNode) {
+    if (claimingElements.has(node)) {
+      return true
+    }
+  }
+  return false
+}
+
 interface Timer {
   pending: () => boolean
   start: (time: number, callback?: () => void) => void
@@ -142,7 +171,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   }
 
   const onTouchStart = (event: TouchEvent) => {
-    if (!accept(event)) {
+    if (claimedInside(el, event.target) || !accept(event)) {
       return
     }
 
@@ -210,7 +239,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   }
 
   const onMouseDown = (event: MouseEvent) => {
-    if (!accept(event) || !isPrimaryButton(event)) {
+    if (claimedInside(el, event.target) || !accept(event) || !isPrimaryButton(event)) {
       return
     }
 
@@ -320,7 +349,7 @@ const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
 
   // Keyboard and assistive-tech activation reach the element as a `click` with no pointer press before it.
   const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
-    if (event.isTrusted && !tracker.recentlyPressed()) {
+    if (event.isTrusted && !tracker.recentlyPressed() && !claimedInside(el, event.target)) {
       fire()
     }
   })
@@ -370,9 +399,9 @@ const holdBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
   }
 }
 
-/** Fires on each trusted edge event of the primary input, cancelling its default action. */
-const onEdge = (fire: Fire) => (event: MouseEvent | TouchEvent) => {
-  if (event.isTrusted) {
+/** Fires on each trusted edge event of the primary input on `el`, cancelling its default action. */
+const onEdge = (el: HTMLElement, fire: Fire) => (event: MouseEvent | TouchEvent) => {
+  if (event.isTrusted && !claimedInside(el, event.target)) {
     if (event.cancelable) {
       event.preventDefault()
     }
@@ -383,10 +412,10 @@ const onEdge = (fire: Fire) => (event: MouseEvent | TouchEvent) => {
   }
 }
 
-const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, ['touchstart', 'mousedown'], onEdge(fire))
+const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, ['touchstart', 'mousedown'], onEdge(el, fire))
 
 const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
-  const onRelease = onEdge(fire)
+  const onRelease = onEdge(el, fire)
   const following = new Set<Teardown>()
   /** Fingers lifted together share one `touchend`, which is one release, however many of them were followed. */
   let lastRelease: TouchEvent | null = null
@@ -399,7 +428,7 @@ const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
     }
     for (let i = 0; i < event.changedTouches.length; i++) {
       const { identifier, target } = event.changedTouches[i]
-      if (!el.contains(target as Node)) {
+      if (!el.contains(target as Node) || claimedInside(el, target)) {
         continue
       }
       const stop = () => {
@@ -513,11 +542,13 @@ export const ClickDirective: Directive = {
     const dataBinding = dataBindingPrefix + dataBindPostfixes[bindingOptions.behavior]
     const deactivate = bindActiveState(el)
     const clickActions = guardClickActions(el)
+    const unclaim = bindingOptions.stop ? claim(el) : () => {}
     const removeBinding = () => {
       teardownBehavior()
       deactivate(true)
       // The press that fired this `once` may still be under way, and its click still has to be cancelled.
       clickActions.stop()
+      unclaim()
       delete (el.dataset[dataBinding])
     }
     const teardownBehavior = behaviors[bindingOptions.behavior](el, bindingOptions, () => {
@@ -535,6 +566,7 @@ export const ClickDirective: Directive = {
         modifier.teardown()
         deactivate(false)
         clickActions.teardown()
+        unclaim()
       }
     })
     elementBindings.set(el, bindings)

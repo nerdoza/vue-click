@@ -105,6 +105,16 @@
       </section>
 
       <section>
+        <h2>Nested elements</h2>
+        <p>A press on a <code>v-click</code> inside another fires both, unless the inner one has <code>stop</code>.</p>
+        <div class="card" v-click="() => hit('card')">
+          <span class="card-label"><span><code>v-click</code> on the card</span><hit-count :n="hits.card"></hit-count></span>
+          <button v-click="() => hit('inner')"><code>v-click</code><hit-count :n="hits.inner"></hit-count></button>
+          <button v-click.stop="() => hit('innerStop')"><code>v-click.stop</code><hit-count :n="hits.innerStop"></hit-count></button>
+        </div>
+      </section>
+
+      <section>
         <h2>Disabled</h2>
         <p>Clicks are ignored while the button is <code>disabled</code>.</p>
         <label><input type="checkbox" v-model="disabled"> disabled</label>

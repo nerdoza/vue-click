@@ -622,6 +622,53 @@ test.describe('the browser\'s click action', () => {
   })
 })
 
+test.describe('nested elements', () => {
+  test('a press on a v-click inside another fires both', async ({ page }) => {
+    await click(page, 'inner')
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'inner'))
+    await expectCalls(page, 'inner', [null, null])
+    await expectCalls(page, 'outer', [null, null])
+  })
+
+  test('stop keeps keyboard, mouse and touch input from the v-click around it', async ({ page }) => {
+    // Keyboard first: a click just after a pointer press on the element counts as that press's own.
+    await page.getByTestId('innerStop').focus()
+    await page.keyboard.press('Enter')
+    await click(page, 'innerStopLabel')
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'innerStopLabel'))
+    await expectCalls(page, 'innerStop', [null, null, null])
+    expect(await callsOf(page, 'outer')).toEqual([])
+  })
+
+  test('the element around a stop is not marked active by its presses', async ({ page }) => {
+    const outer = page.getByTestId('outer')
+    await pointAt(page, 'innerStop')
+    await page.mouse.down()
+    await expect(page.getByTestId('innerStop')).toHaveAttribute('data-vc-state-active', '')
+    await expect(outer).not.toHaveAttribute('data-vc-state-active')
+    await page.mouse.up()
+  })
+
+  test('stop combines with a behavior', async ({ page }) => {
+    // A short click is no hold, and the stop keeps it from the outer click.
+    await click(page, 'innerHoldStop')
+    await pressFor(page, 'innerHoldStop', 500)
+    await expectCalls(page, 'innerHoldStop', [null])
+    expect(await callsOf(page, 'outer')).toEqual([])
+  })
+
+  test('the element around still gets its own presses', async ({ page }) => {
+    const box = await page.getByTestId('outer').boundingBox()
+    if (box === null) {
+      throw new Error('element is not visible')
+    }
+    await page.mouse.click(box.x + 6, box.y + 6)
+    await expectCalls(page, 'outer', [null])
+  })
+})
+
 test.describe('keyboard and assistive tech', () => {
   test('Enter and Space each activate a single v-click once', async ({ page }) => {
     await page.getByTestId('single').focus()

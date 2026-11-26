@@ -107,6 +107,18 @@ Without an argument, the handler gets `null`; it never gets the event. For any o
 
 Other pairs fire independently. For example, `v-click` with `v-click.double` fires the click on each of the two clicks as well as the double.
 
+## Nested elements
+
+A press on a `v-click` element inside another fires both. Add `stop` to the inner one to keep its presses and keyboard clicks from the `v-click` directives around it, the way `@click.stop` works:
+
+```html
+<div v-click="openCard">
+  <button v-click.stop="removeCard">Remove</button>
+</div>
+```
+
+`stop` combines with a behavior and a modifier (`v-click.hold.stop`), and only affects other `v-click` directives.
+
 ## Input handling
 
 - **Mouse buttons:** only the primary button counts. On macOS and iPadOS, a <kbd>Control</kbd>-click is a right click, so it's ignored too.

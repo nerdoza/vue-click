@@ -21,6 +21,8 @@ export interface BindingOptions {
   time: number | null
   argument: string | null
   once: boolean
+  /** Claim the input that starts inside the element, so v-click on the elements around it ignores it. */
+  stop: boolean
   dispatch: Function | (() => void)
 }
 
@@ -35,6 +37,7 @@ export const ParseBinding = (binding: DirectiveBinding) => {
     time: null,
     argument: null,
     once: false,
+    stop: false,
     dispatch: () => { }
   }
 
@@ -50,6 +53,8 @@ export const ParseBinding = (binding: DirectiveBinding) => {
       result.behavior = mods[0] as Behavior
     } else if (enumHasValue(Modifier, mods[0])) {
       result.modifier = mods[0] as Modifier
+    } else if (mods[0] === 'stop') {
+      result.stop = true
     }
   }
 
