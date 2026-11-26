@@ -56,7 +56,7 @@ const ids = [
   'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease',
   'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop', 'outerRelease',
   'releaseStopChild', 'pressOnceStopChild', 'debounceDisable', 'onceThenHold', 'holdAfterOnce', 'holdThenOnce',
-  'onceAfterHold', 'onceA', 'onceB', 'bareUnit', 'typo', 'twoBehaviors'
+  'onceAfterHold', 'onceA', 'onceB', 'bareUnit', 'typo', 'twoBehaviors', 'twoModifiers'
 ]
 const handlers: Record<string, (arg: unknown) => unknown> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
@@ -130,6 +130,7 @@ const app = createApp({
     <button data-testid="bareUnit" v-click.hold.s="h.bareUnit">hold.s</button>
     <button data-testid="typo" v-click.dubble="h.typo">dubble</button>
     <button data-testid="twoBehaviors" v-click.double.hold.1s.2s="h.twoBehaviors">double.hold.1s.2s</button>
+    <button data-testid="twoModifiers" v-click.once.throttle="h.twoModifiers">once.throttle</button>
     <button data-testid="twoOnces" v-click.once="h.onceA" v-click.press.once="h.onceB">once + press.once</button>
     <button data-testid="throws" v-click="h.throws">throws</button>
     <button data-testid="rejects" v-click="h.rejects">rejects</button>
