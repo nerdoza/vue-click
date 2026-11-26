@@ -400,20 +400,32 @@ const guardClickActions = (el: HTMLElement): ClickActionGuard => {
   }
 }
 
-const bindActiveState = (el: HTMLElement): ((deactivate: boolean) => void) => {
-  if (Object.values(dataBindPostfixes).some(postfix => typeof el.dataset[dataBindingPrefix + postfix] !== 'undefined')) {
-    return () => {}
-  }
+interface ClickBinding {
+  bindingOptions: BindingOptions
+  teardown: Teardown
+}
 
-  const dataState = dataStatePrefix + dataStateActivePostfix
-  const tracker = trackPress(el, () => { el.dataset[dataState] = '' }, () => { delete (el.dataset[dataState]) }, false)
+/** What an element's v-click directives share: its pressed and deactivated states belong to the element, not to one directive. */
+interface ElementState {
+  /** The element's bindings, keyed by their place in `vnode.dirs`: that is how Vue pairs them across renders. */
+  bindings: Map<number, ClickBinding>
+  /** How many bindings can still fire: all of them, less each `once` that has fired. */
+  live: number
+  /** Stops the tracking behind `data-vc-state-active`. */
+  stopActiveState: Teardown
+}
 
-  return (deactivate) => {
-    tracker.teardown()
-    if (deactivate) {
-      el.dataset[dataStatePrefix + dataStateDeactivatedPostfix] = ''
-    }
+const elementStates = new WeakMap<HTMLElement, ElementState>()
+
+const elementState = (el: HTMLElement): ElementState => {
+  let state = elementStates.get(el)
+  if (state === undefined) {
+    const dataState = dataStatePrefix + dataStateActivePostfix
+    const tracker = trackPress(el, () => { el.dataset[dataState] = '' }, () => { delete (el.dataset[dataState]) }, false)
+    state = { bindings: new Map(), live: 0, stopActiveState: tracker.teardown }
+    elementStates.set(el, state)
   }
+  return state
 }
 
 const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
@@ -619,14 +631,6 @@ const bindModifier = (bindingOptions: BindingOptions, dispatch: Dispatch): Modif
 
 const isDisabled = (el: HTMLElement) => (el as { disabled?: unknown }).disabled === true
 
-interface ClickBinding {
-  bindingOptions: BindingOptions
-  teardown: Teardown
-}
-
-/** Each element's v-click bindings, keyed by their place in `vnode.dirs`: that is how Vue pairs them across renders. */
-const elementBindings = new WeakMap<HTMLElement, Map<number, ClickBinding>>()
-
 const bindingKey = (binding: DirectiveBinding, vnode: VNode) => vnode.dirs?.indexOf(binding) ?? -1
 
 export const ClickDirective: Directive = {
@@ -639,16 +643,33 @@ export const ClickDirective: Directive = {
       }
     })
     const dataBinding = dataBindingPrefix + dataBindPostfixes[bindingOptions.behavior]
-    const deactivate = bindActiveState(el)
+    const state = elementState(el)
+    const key = bindingKey(binding, vnode)
     const clickActions = guardClickActions(el)
     const unclaim = bindingOptions.stop ? claim(el) : () => {}
+
+    state.live++
+    let live = true
+    /** Marks this binding as no longer able to fire; true when it was the element's last one that could. */
+    const retire = () => {
+      if (live) {
+        live = false
+        state.live--
+        return state.live === 0
+      }
+      return false
+    }
+
     const removeBinding = () => {
       teardownBehavior()
-      deactivate(true)
       // The press that fired this `once` may still be under way, and its click still has to be cancelled.
       clickActions.stop()
       unclaim()
       delete (el.dataset[dataBinding])
+      if (retire()) {
+        state.stopActiveState()
+        el.dataset[dataStatePrefix + dataStateDeactivatedPostfix] = ''
+      }
     }
     const teardownBehavior = behaviors[bindingOptions.behavior](el, bindingOptions, () => {
       if (!isDisabled(el)) {
@@ -657,31 +678,31 @@ export const ClickDirective: Directive = {
     })
     el.dataset[dataBinding] = bindingOptions.modifier ?? ''
 
-    const bindings = elementBindings.get(el) ?? new Map<number, ClickBinding>()
-    bindings.set(bindingKey(binding, vnode), {
+    state.bindings.set(key, {
       bindingOptions,
       teardown: () => {
         teardownBehavior()
         modifier.teardown()
-        deactivate(false)
         clickActions.teardown()
         unclaim()
+        retire()
+        state.bindings.delete(key)
+        if (state.bindings.size === 0) {
+          state.stopActiveState()
+          elementStates.delete(el)
+        }
       }
     })
-    elementBindings.set(el, bindings)
   },
   updated (el: HTMLElement, binding, vnode) {
-    const clickBinding = elementBindings.get(el)?.get(bindingKey(binding, vnode))
+    const clickBinding = elementStates.get(el)?.bindings.get(bindingKey(binding, vnode))
     if (clickBinding !== undefined) {
       // Only the handler and its argument follow the binding; the behavior, modifier and time stay as mounted.
       clickBinding.bindingOptions.dispatch = ParseBinding(binding).dispatch
     }
   },
   beforeUnmount (el: HTMLElement, binding, vnode) {
-    const bindings = elementBindings.get(el)
-    const key = bindingKey(binding, vnode)
-    bindings?.get(key)?.teardown()
-    bindings?.delete(key)
+    elementStates.get(el)?.bindings.get(bindingKey(binding, vnode))?.teardown()
   }
 }
 

@@ -717,6 +717,32 @@ test.describe('nested elements', () => {
   })
 })
 
+test.describe('the element\'s state, shared by its directives', () => {
+  for (const [id, onceId, holdId] of [['onceThenHold', 'onceThenHold', 'holdAfterOnce'], ['holdThenOnce', 'onceAfterHold', 'holdThenOnce']]) {
+    test(`a once that fires beside a live directive leaves the element active (${id})`, async ({ page }) => {
+      const el = page.getByTestId(id)
+      await click(page, id)
+      await expectCalls(page, onceId, [null])
+      await expect(el).not.toHaveAttribute('data-vc-state-deactivated')
+      await pointAt(page, id)
+      await page.mouse.down()
+      await expect(el).toHaveAttribute('data-vc-state-active', '')
+      await expect.poll(async () => await callsOf(page, holdId)).toEqual([null])
+      await page.mouse.up()
+      await expect(el).not.toHaveAttribute('data-vc-state-active')
+    })
+  }
+
+  test('the element is deactivated once its last live directive is spent', async ({ page }) => {
+    const el = page.getByTestId('twoOnces')
+    await click(page, 'twoOnces')
+    await expectCalls(page, 'onceA', [null])
+    await expectCalls(page, 'onceB', [null])
+    await expect(el).toHaveAttribute('data-vc-state-deactivated', '')
+    await expect(el).not.toHaveAttribute('data-vc-state-active')
+  })
+})
+
 test.describe('handler errors', () => {
   test('reach the app\'s errorHandler, thrown or rejected, as with v-on', async ({ page }) => {
     const uncaught: string[] = []
