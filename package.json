@@ -1,6 +1,6 @@
 {
   "name": "vue-click",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "private": false,
   "description": "Vue 3 click directive with double click, hold, press and release behaviors, and once, throttle and debounce modifiers.",
   "author": "Zachary Cardoza",
