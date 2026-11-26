@@ -555,6 +555,73 @@ test.describe('cancel and release outside', () => {
   })
 })
 
+// A cancelled touchend means the browser generates no click for a tap; mouse clicks match by having their action
+// cancelled.
+test.describe('the browser\'s click action', () => {
+  const hash = async (page: Page) => await page.evaluate(() => location.hash)
+
+  test('a mouse click does not submit a form or follow a link', async ({ page }) => {
+    await click(page, 'formSingle')
+    await click(page, 'formHold')
+    await click(page, 'link')
+    await expectCalls(page, 'formSingle', [null])
+    await expectCalls(page, 'link', [null])
+    expect(await callsOf(page, 'formHold')).toEqual([])
+    expect(await callsOf(page, 'formSubmit')).toEqual([])
+    expect(await hash(page)).toBe('')
+  })
+
+  test('nor does a tap', async ({ page }) => {
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'formSingle'))
+    await touch.tap(await finger(page, 'formHold'))
+    await touch.tap(await finger(page, 'link'))
+    await expectCalls(page, 'formSingle', [null])
+    await expectCalls(page, 'link', [null])
+    expect(await callsOf(page, 'formSubmit')).toEqual([])
+    expect(await hash(page)).toBe('')
+  })
+
+  test('nor the mouse press that fires a once, though the next click, unbound, does', async ({ page }) => {
+    await page.evaluate(() => {
+      const prevented: boolean[] = []
+      Object.assign(window, { prevented })
+      document.querySelector('[data-testid="once"]')?.addEventListener('click', event => { prevented.push(event.defaultPrevented) })
+    })
+    await click(page, 'once')
+    await click(page, 'once')
+    await expectCalls(page, 'once', [null])
+    expect(await page.evaluate(() => (window as unknown as { prevented: boolean[] }).prevented)).toEqual([true, false])
+  })
+
+  test('a keyboard click right after a mouse click keeps its action', async ({ page }) => {
+    await click(page, 'formHold')
+    await page.getByTestId('formHold').focus()
+    await page.keyboard.press('Enter')
+    await expectCalls(page, 'formSubmit', [null])
+  })
+
+  // Chromium dispatches no click for this press at all, so here the test only pins the result; the guard also waits
+  // for the primary button's own release for browsers that do.
+  test('another button pressed and released meanwhile does not end the mouse press', async ({ page }) => {
+    await pointAt(page, 'formHold')
+    await page.mouse.down()
+    await page.mouse.down({ button: 'right' })
+    await page.mouse.up({ button: 'right' })
+    await page.waitForTimeout(700)
+    await page.mouse.up()
+    await expectCalls(page, 'formHold', [null])
+    expect(await callsOf(page, 'formSubmit')).toEqual([])
+  })
+
+  test('keyboard activation keeps it', async ({ page }) => {
+    await page.getByTestId('formSingle').focus()
+    await page.keyboard.press('Enter')
+    await expectCalls(page, 'formSingle', [null])
+    await expectCalls(page, 'formSubmit', [null])
+  })
+})
+
 test.describe('keyboard and assistive tech', () => {
   test('Enter and Space each activate a single v-click once', async ({ page }) => {
     await page.getByTestId('single').focus()

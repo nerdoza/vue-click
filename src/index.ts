@@ -242,6 +242,56 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
 
 const isPrimaryInput = (event: MouseEvent | TouchEvent) => !('button' in event) || isPrimaryButton(event)
 
+interface ClickActionGuard {
+  /** Stops guarding new presses; the click that ends a press already under way is still cancelled. */
+  stop: Teardown
+  teardown: Teardown
+}
+
+/**
+ * The behaviors cancel the `touchend` of a touch, so the browser never generates a `click` for it, and a tap never
+ * submits a form, follows a link or toggles a checkbox. This gives mouse input the same result: the `click` that ends
+ * a mouse press on `el` has its default action cancelled. A keyboard or assistive-tech `click` has no mouse press
+ * before it and keeps its action.
+ */
+const guardClickActions = (el: HTMLElement): ClickActionGuard => {
+  /** Set by the release of a primary press on `el`, for the `click` (if any) that the release makes. */
+  let armed = false
+  let unlistenRelease: Teardown = () => {}
+
+  const unlistenPress = listen(el, ['mousedown'], (event: MouseEvent) => {
+    if (event.isTrusted && event.button === 0) {
+      unlistenRelease()
+      // Wherever the button is released; other buttons pressed and released meanwhile don't end this press.
+      unlistenRelease = listen(window, ['mouseup'], (release: MouseEvent) => {
+        if (release.isTrusted && release.button === 0) {
+          unlistenRelease()
+          // The browser dispatches a release's `click` right after its `mouseup`, before any timer runs, so this
+          // covers that click alone: a later click, from the keyboard say, keeps its action.
+          armed = true
+          setTimeout(() => { armed = false })
+        }
+      }, passiveEventOptions)
+    }
+  }, passiveEventOptions)
+
+  const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
+    if (armed && event.isTrusted) {
+      armed = false
+      event.preventDefault()
+    }
+  })
+
+  return {
+    stop: unlistenPress,
+    teardown: () => {
+      unlistenPress()
+      unlistenRelease()
+      unlistenClick()
+    }
+  }
+}
+
 const bindActiveState = (el: HTMLElement): ((deactivate: boolean) => void) => {
   if (Object.values(dataBindPostfixes).some(postfix => typeof el.dataset[dataBindingPrefix + postfix] !== 'undefined')) {
     return () => {}
@@ -462,9 +512,12 @@ export const ClickDirective: Directive = {
     const modifier = bindModifier(bindingOptions)
     const dataBinding = dataBindingPrefix + dataBindPostfixes[bindingOptions.behavior]
     const deactivate = bindActiveState(el)
+    const clickActions = guardClickActions(el)
     const removeBinding = () => {
       teardownBehavior()
       deactivate(true)
+      // The press that fired this `once` may still be under way, and its click still has to be cancelled.
+      clickActions.stop()
       delete (el.dataset[dataBinding])
     }
     const teardownBehavior = behaviors[bindingOptions.behavior](el, bindingOptions, () => {
@@ -481,6 +534,7 @@ export const ClickDirective: Directive = {
         teardownBehavior()
         modifier.teardown()
         deactivate(false)
+        clickActions.teardown()
       }
     })
     elementBindings.set(el, bindings)

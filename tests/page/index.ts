@@ -52,7 +52,8 @@ window.removeEventListener = (type: string, listener: EventListenerOrEventListen
 const ids = [
   'single', 'singleArg', 'nested', 'double', 'double1s', 'hold', 'hold1s', 'holdArg', 'tiny', 'press', 'pressOnce',
   'release', 'once', 'throttle', 'throttleArg', 'debounce', 'disabled', 'comboSingle', 'comboHold', 'bound', 'swapA',
-  'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease'
+  'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease',
+  'formSingle', 'formHold', 'formSubmit', 'link'
 ]
 const handlers: Record<string, (arg: unknown) => void> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
@@ -103,6 +104,11 @@ const app = createApp({
       <span v-if="state.altLabel">relabelled</span>
       <span v-else data-testid="relabelReleaseLabel">relabel release</span>
     </button>
+    <form @submit.prevent="h.formSubmit(null)">
+      <button data-testid="formSingle" v-click="h.formSingle">submit (single)</button>
+      <button data-testid="formHold" v-click.hold="h.formHold">submit (hold)</button>
+    </form>
+    <a data-testid="link" href="#followed" v-click="h.link">link</a>
   `
 })
 
