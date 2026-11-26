@@ -92,7 +92,8 @@ interface PressTracker {
  */
 const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: boolean) => void, preventDefault = true): PressTracker => {
   let press: { x: number, y: number, touchId: number | null } | null = null
-  let unlistenWindow: Teardown = () => {}
+  /** Removes the listeners that follow the current press: on `window` for a mouse, on the touched node for a touch. */
+  let unlistenPress: Teardown = () => {}
   let lastPointerAt = 0
 
   const accept = (event: Event) => {
@@ -114,8 +115,8 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   const finish = (released: boolean) => {
     if (press !== null) {
       press = null
-      unlistenWindow()
-      unlistenWindow = () => {}
+      unlistenPress()
+      unlistenPress = () => {}
       onEnd(released)
     }
   }
@@ -166,6 +167,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
 
     const touch = event.changedTouches[0]
     begin(touch.clientX, touch.clientY, touch.identifier)
+    unlistenPress = followTouch(touch.target)
   }
 
   const onTouchMove = (event: TouchEvent) => {
@@ -179,6 +181,17 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
     if (accept(event) && findTouch(event.changedTouches) !== null) {
       finish(event.type === 'touchend')
     }
+  }
+
+  // A touch's later events go to the node it started on, even once that node has left the DOM (re-rendered mid-press,
+  // say), and from a detached node they never reach `el`. Listening on the node too keeps the press in view; while it
+  // is attached, whichever listener sees an event first finishes the press and the other finds nothing left to do.
+  const followTouch = (target: EventTarget): Teardown => {
+    const unlisten = [
+      listen(target, ['touchmove'], (event: TouchEvent) => onTouchMove(event), passiveEventOptions),
+      listen(target, ['touchend', 'touchcancel'], (event: TouchEvent) => onTouchEnd(event))
+    ]
+    return () => unlisten.forEach(stop => stop())
   }
 
   const onWindowMouse = (event: MouseEvent) => {
@@ -205,7 +218,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
     // An open mouse press here missed its release; an open touch press makes this a second contact.
     finish(false)
     if (!secondContact) {
-      unlistenWindow = listen(window, ['mousemove', 'mouseup'], onWindowMouse, passiveEventOptions)
+      unlistenPress = listen(window, ['mousemove', 'mouseup'], onWindowMouse, passiveEventOptions)
       begin(event.clientX, event.clientY, null)
     }
   }
@@ -307,26 +320,79 @@ const holdBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
   }
 }
 
-const edgeBehavior = (types: string[]): BehaviorBinder => (el, bindingOptions, fire) => {
-  return listen(el, types, (event: MouseEvent | TouchEvent) => {
-    if (event.isTrusted) {
-      if (event.cancelable) {
-        event.preventDefault()
-      }
-
-      if (isPrimaryInput(event)) {
-        fire()
-      }
+/** Fires on each trusted edge event of the primary input, cancelling its default action. */
+const onEdge = (fire: Fire) => (event: MouseEvent | TouchEvent) => {
+  if (event.isTrusted) {
+    if (event.cancelable) {
+      event.preventDefault()
     }
-  })
+
+    if (isPrimaryInput(event)) {
+      fire()
+    }
+  }
+}
+
+const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, ['touchstart', 'mousedown'], onEdge(fire))
+
+const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
+  const onRelease = onEdge(fire)
+  const following = new Set<Teardown>()
+  /** Fingers lifted together share one `touchend`, which is one release, however many of them were followed. */
+  let lastRelease: TouchEvent | null = null
+
+  // A touch ends on the node it started on, even once that node has left the DOM (re-rendered mid-press, say), and
+  // from a detached node its `touchend` never reaches `el`, so each touch is followed on its own node instead.
+  const onTouchStart = (event: TouchEvent) => {
+    if (!event.isTrusted) {
+      return
+    }
+    for (let i = 0; i < event.changedTouches.length; i++) {
+      const { identifier, target } = event.changedTouches[i]
+      if (!el.contains(target as Node)) {
+        continue
+      }
+      const stop = () => {
+        unlisten()
+        following.delete(stop)
+      }
+      const unlisten = listen(target, ['touchend', 'touchcancel'], (end: TouchEvent) => {
+        // A scripted event naming this touch must not stop the following of the real one.
+        if (!end.isTrusted) {
+          return
+        }
+        for (let j = 0; j < end.changedTouches.length; j++) {
+          if (end.changedTouches[j].identifier === identifier) {
+            stop()
+            if (end.type === 'touchend' && end !== lastRelease) {
+              lastRelease = end
+              onRelease(end)
+            }
+            return
+          }
+        }
+      })
+      following.add(stop)
+    }
+  }
+
+  const unlisten = [
+    listen(el, ['touchstart'], onTouchStart, passiveEventOptions),
+    listen(el, ['mouseup'], onRelease)
+  ]
+
+  return () => {
+    unlisten.forEach(stop => stop())
+    following.forEach(stop => stop())
+  }
 }
 
 const behaviors: Record<Behavior, BehaviorBinder> = {
   [Behavior.Single]: singleBehavior,
   [Behavior.Double]: doubleBehavior,
   [Behavior.Hold]: holdBehavior,
-  [Behavior.Press]: edgeBehavior(['touchstart', 'mousedown']),
-  [Behavior.Release]: edgeBehavior(['touchend', 'mouseup'])
+  [Behavior.Press]: pressBehavior,
+  [Behavior.Release]: releaseBehavior
 }
 
 interface ModifierHandle {

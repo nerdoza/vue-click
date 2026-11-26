@@ -102,6 +102,18 @@ const touchscreen = async (page: Page) => {
   }
 }
 
+/**
+ * Counts the `mouseup` events from here on. A `touchend` that nothing cancels is followed by emulated mouse events, so
+ * any count after a touch means v-click missed its `touchend`.
+ */
+const countMouseUps = async (page: Page) => {
+  await page.evaluate(() => {
+    Object.assign(window, { mouseUps: 0 })
+    window.addEventListener('mouseup', () => { (window as unknown as { mouseUps: number }).mouseUps++ }, true)
+  })
+  return async () => await page.evaluate(() => (window as unknown as { mouseUps: number }).mouseUps)
+}
+
 const setState = async (page: Page, patch: Partial<PageState>) => {
   await page.evaluate(async (patch) => {
     Object.assign(window.state, patch)
@@ -437,15 +449,75 @@ test.describe('multi-touch', () => {
     await expect.poll(async () => await callsOf(page, 'tileA')).toEqual([null])
     await touch.end()
   })
+})
 
-  test('a touch that ended out of sight does not swallow the next tap', async ({ page }) => {
+// Re-rendering the touched child mid-press sends the rest of the touch to the detached node, which never reaches the
+// element on its own.
+test.describe('content re-rendered mid-press', () => {
+  test('a tap still clicks, and so does the next one', async ({ page }) => {
     const touch = await touchscreen(page)
-    // Replacing the touched child mid-press sends its touchend to the detached node, past the element.
     await touch.start(await finger(page, 'relabelLabel'))
     await setState(page, { altLabel: true })
     await touch.end()
-    await touch.tap(await finger(page, 'relabel'))
     await expectCalls(page, 'relabel', [null])
+    await touch.tap(await finger(page, 'relabel'))
+    await expectCalls(page, 'relabel', [null, null])
+  })
+
+  test('a hold released early never fires and clears the active state', async ({ page }) => {
+    const relabelHold = page.getByTestId('relabelHold')
+    const touch = await touchscreen(page)
+    await touch.start(await finger(page, 'relabelHoldLabel'))
+    await setState(page, { altLabel: true })
+    await expect(relabelHold).toHaveAttribute('data-vc-state-active', '')
+    await page.waitForTimeout(300)
+    await touch.end()
+    await expect(relabelHold).not.toHaveAttribute('data-vc-state-active')
+    await expectCallsAfter(page, 1000, 'relabelHold', [])
+  })
+
+  test('a release still fires, from the touch itself', async ({ page }) => {
+    const mouseUps = await countMouseUps(page)
+    const touch = await touchscreen(page)
+    await touch.start(await finger(page, 'relabelReleaseLabel'))
+    await setState(page, { altLabel: true })
+    await touch.end()
+    await expectCalls(page, 'relabelRelease', [null])
+    expect(await mouseUps()).toBe(0)
+  })
+})
+
+test.describe('release on touch', () => {
+  // CDP lifts each finger in a touchend of its own. (Fingers lifted in one touchend are one release, which CDP can't
+  // send.)
+  test('each finger lifted is a release', async ({ page }) => {
+    const touch = await touchscreen(page)
+    const first = await finger(page, 'release', 1)
+    await touch.start(first)
+    await touch.start(first, { x: first.x + 30, y: first.y, id: 2 })
+    await touch.end()
+    await expectCalls(page, 'release', [null, null])
+  })
+
+  test('a scripted touchend does not stop a touch from releasing', async ({ page }) => {
+    await page.evaluate(() => {
+      const release = document.querySelector('[data-testid="release"]')
+      release?.addEventListener('touchstart', (event) => {
+        Object.assign(window, { touchId: (event as TouchEvent).changedTouches[0].identifier })
+      }, { capture: true, once: true })
+    })
+    const mouseUps = await countMouseUps(page)
+    const touch = await touchscreen(page)
+    await touch.start(await finger(page, 'release'))
+    await page.evaluate(() => {
+      const release = document.querySelector('[data-testid="release"]') as HTMLElement
+      const identifier = (window as unknown as { touchId: number }).touchId
+      const changedTouches = [new Touch({ identifier, target: release })]
+      release.dispatchEvent(new TouchEvent('touchend', { changedTouches, bubbles: true, cancelable: true }))
+    })
+    await touch.end()
+    await expectCalls(page, 'release', [null])
+    expect(await mouseUps()).toBe(0)
   })
 })
 
