@@ -1,4 +1,4 @@
-import { Directive, DirectiveBinding, VNode } from 'vue'
+import type { DirectiveBinding, ObjectDirective, Plugin, VNode } from 'vue'
 import { ParseBinding, Behavior, Modifier, BindingOptions } from './binding'
 
 const defaultEventTimeout = 300
@@ -648,7 +648,10 @@ const isDisabled = (el: HTMLElement) => (el as { disabled?: unknown }).disabled 
 
 const bindingKey = (binding: DirectiveBinding, vnode: VNode) => vnode.dirs?.indexOf(binding) ?? -1
 
-export const ClickDirective: Directive = {
+/** A v-click handler. It's called with the directive's argument, or `null` without one, and never with the event. */
+export type ClickHandler = (argument: string | null) => unknown
+
+export const ClickDirective: ObjectDirective<HTMLElement, ClickHandler | null | undefined> = {
   mounted (el: HTMLElement, binding, vnode) {
     const bindingOptions = ParseBinding(binding)
     if (bindingOptions.problems.length > 0) {
@@ -725,8 +728,18 @@ export const ClickDirective: Directive = {
   }
 }
 
-export default {
-  install: (app: any) => {
+// Registered for template type-checking (Volar, vue-tsc) under the name the plugin installs it as, as Vue registers its
+// own directives. GlobalDirectives exists from Vue 3.5; before that this declares an interface nothing reads.
+declare module 'vue' {
+  interface GlobalDirectives {
+    vClick: typeof ClickDirective
+  }
+}
+
+const VueClick: Plugin = {
+  install: (app) => {
     app.directive('click', ClickDirective)
   }
 }
+
+export default VueClick
