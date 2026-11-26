@@ -139,7 +139,7 @@ A press on a `v-click` element inside another fires both. Add `stop` to the inne
 | --- | --- |
 | `data-vc-bind-click`, `-double`, `-hold`, `-press`, `-release` | while that behavior is bound; the value is its modifier, if any (`once`, `throttle`, `debounce`) |
 | `data-vc-state-active` | while the element is pressed |
-| `data-vc-state-deactivated` | after a `once` directive has fired and removed itself |
+| `data-vc-state-deactivated` | once every `v-click` on the element is a `once` that has fired and removed itself |
 
 Use `data-vc-state-active` instead of `:active`. With the browser's default handling cancelled, `:active` and `:focus` don't apply reliably, and the attribute is cleared as soon as a press ends or is cancelled. Keep a `:focus-visible` style for keyboard users.
 
