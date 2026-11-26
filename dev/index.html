@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
@@ -8,85 +8,126 @@
     href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Ctext%20x='0'%20y='14'%3E🖱️%3C/text%3E%3C/svg%3E"
     type="image/svg+xml" />
   <link rel="stylesheet" href="style.css">
-  <title>Vue-Click Demo</title>
+  <title>vue-click demo</title>
 </head>
 
 <body>
   <div id="app">
-    <div>
-      <h1>Vue-Click Demo</h1>
-      <a href="https://github.com/nerdoza/vue-click">GitHub Repo</a>
-      <p>Click Count: {{ count }} <button v-click="reset">🔄</button></p>
-    </div>
-    <div>
-      <p>Native Click</p>
-      <button v-on:click="click">v-on:click</button>
-    </div>
-    <div>
-      <p>Click</p>
-      <button v-click="click">v-click</button>
-    </div>
-    <div>
-      <p>Double Click</p>
-      <button v-click.double="click">v-click.double</button>
-      <button v-click.double.200="click">v-click.double.200</button>
-      <button v-click.double.2s="click">v-click.double.2s</button>
-    </div>
-    <div>
-      <p>Hold</p>
-      <button v-click.hold="click">v-click.hold</button>
-      <button v-click.hold.2s:40="click">v-click.hold.2s:40</button>
-    </div>
-    <div>
-      <p>Press</p>
-      <button v-click.press="click">v-click.press</button>
-      <button v-click.press.throttle="click">v-click.press.throttle</button>
-    </div>
-    <div>
-      <p>Release</p>
-      <button v-click.release="click">v-click.release</button>
-      <button v-click.release.throttle="click">v-click.release.throttle</button>
-    </div>
-    <div>
-      <p>Once</p>
-      <button v-click.once="click">v-click.once</button>
-      <button v-click.once:1000="click">v-click.once:1000</button>
-      <button v-click.double.once.2s="click">v-click.double.once.2s</button>
-    </div>
-    <div>
-      <p>Throttle</p>
-      <button v-click.throttle="click">v-click.throttle</button>
-      <button v-click.throttle.20="click">v-click.throttle.20</button>
-      <button v-click.throttle.2s="click">v-click.throttle.2s</button>
-    </div>
-    <div>
-      <p>Debounce</p>
-      <button v-click.debounce="click">v-click.debounce</button>
-      <button v-click.debounce.20="click">v-click.debounce.20</button>
-      <button v-click.debounce.2s="click">v-click.debounce.2s</button>
-    </div>
-    <div>
-      <p>Arguments</p>
-      <button v-click:2="click">v-click:2</button>
-      <button v-click.throttle:3="click">v-click.throttle:3</button>
-      <button v-click.throttle.1s:10="click">v-click.throttle.1s:10</button>
-    </div>
-    <div>
-      <p>Disabled</p>
-      <button disabled="true" v-click:1000="click">disabled v-click:1000</button>
-      <button disabled="true" v-click.press:1000="click">disabled v-click.press:1000</button>
-    </div>
-    <div>
-      <p>Supported Combos</p>
-      <button v-click="click" v-click.hold:100="click">v-click v-click.hold:100</button>
-    </div>
-    <div>
-      <p>⚠ Unsupported Combos</p>
-      <button v-click="click" v-click.double:10="click">v-click v-click.double.10</button>
-      <button v-click.release="click" v-click.hold:100="click">v-click.release v-click.hold:100</button>
-      <button v-click.press="click" v-click.hold:100="click">v-click.press v-click.hold:100</button>
-      <button v-click.once:50="click" v-click.double:11="click">v-click.once:50 v-click.double:11</button>
-    </div>
+    <header>
+      <h1>vue-click</h1>
+      <p>A <code>v-click</code> directive for Vue 3 with double click, hold, press and release behaviors, and
+        <code>once</code>, <code>throttle</code> and <code>debounce</code> modifiers.</p>
+      <p><a href="https://github.com/nerdoza/vue-click#readme">Documentation</a> ·
+        <a href="https://www.npmjs.com/package/vue-click">npm</a> ·
+        <a href="https://github.com/nerdoza/vue-click/blob/main/dev/index.html">Source of this page</a></p>
+      <pre><code>npm install vue-click</code></pre>
+      <p class="hint">Each button is labeled with its directive and counts how many times it fired. Try them with a
+        mouse, a finger and the keyboard.
+        <button class="reset" v-click="reset">Reset</button></p>
+    </header>
+
+    <main :key="round">
+      <section>
+        <h2>Click</h2>
+        <p>Fires when the button is pressed and released within 300ms. Unlike <code>v-on:click</code>, it ignores
+          slow presses, drags and right clicks.</p>
+        <button v-click="() => hit('click')"><code>v-click</code><hit-count :n="hits.click"></hit-count></button>
+        <button @click="hit('native')"><code>v-on:click</code><hit-count :n="hits.native"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Double click</h2>
+        <p>Fires on the second of two clicks. The second click has to start within the time: 300ms unless you set
+          one.</p>
+        <button v-click.double="() => hit('double')"><code>v-click.double</code><hit-count :n="hits.double"></hit-count></button>
+        <button v-click.double.1s="() => hit('double1s')"><code>v-click.double.1s</code><hit-count :n="hits.double1s"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Hold</h2>
+        <p>Fires once the button has been held down for the time, 300ms by default. Letting go early or sliding off
+          cancels it.</p>
+        <button v-click.hold="() => hit('hold')"><code>v-click.hold</code><hit-count :n="hits.hold"></hit-count></button>
+        <button v-click.hold.1s="() => hit('hold1s')"><code>v-click.hold.1s</code><hit-count :n="hits.hold1s"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Press and release</h2>
+        <p>Fire on the way down and on the way up, without waiting for a whole click.</p>
+        <button v-click.press="() => hit('press')"><code>v-click.press</code><hit-count :n="hits.press"></hit-count></button>
+        <button v-click.release="() => hit('release')"><code>v-click.release</code><hit-count :n="hits.release"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Once</h2>
+        <p>Fires the first time, then removes itself and marks the button with
+          <code>data-vc-state-deactivated</code>. Reset to try again.</p>
+        <button v-click.once="() => hit('once')"><code>v-click.once</code><hit-count :n="hits.once"></hit-count></button>
+        <button v-click.double.once="() => hit('doubleOnce')"><code>v-click.double.once</code><hit-count :n="hits.doubleOnce"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Throttle</h2>
+        <p>Fires on the first click, then ignores clicks until none have come for the time. Click quickly to see the
+          extra clicks dropped.</p>
+        <button v-click.throttle="() => hit('throttle')"><code>v-click.throttle</code><hit-count :n="hits.throttle"></hit-count></button>
+        <button v-click.throttle.1s="() => hit('throttle1s')"><code>v-click.throttle.1s</code><hit-count :n="hits.throttle1s"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Debounce</h2>
+        <p>Waits until the clicks have stopped for the time, then fires once.</p>
+        <button v-click.debounce="() => hit('debounce')"><code>v-click.debounce</code><hit-count :n="hits.debounce"></hit-count></button>
+        <button v-click.debounce.1s="() => hit('debounce1s')"><code>v-click.debounce.1s</code><hit-count :n="hits.debounce1s"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Arguments</h2>
+        <p>The directive's argument reaches the handler as a string. For any other value, use an arrow function.</p>
+        <button v-click:open="show"><code>v-click:open="show"</code></button>
+        <button v-click:close.throttle="show"><code>v-click:close.throttle="show"</code></button>
+        <button v-click="() => show(42)"><code>v-click="() => show(42)"</code></button>
+        <p class="result">show received: <code>{{ received }}</code></p>
+      </section>
+
+      <section>
+        <h2>Combining</h2>
+        <p><code>v-click</code> with <code>v-click.hold</code> tells a tap from a long press: only one of them fires.
+          Most other pairs both fire, such as a click and a double click.</p>
+        <button v-click="() => hit('tap')" v-click.hold="() => hit('long')">
+          <code>v-click + v-click.hold</code>
+          <span class="counts"><hit-count label="tap" :n="hits.tap"></hit-count><hit-count label="hold" :n="hits.long"></hit-count></span>
+        </button>
+        <button v-click="() => hit('single')" v-click.double="() => hit('pair')">
+          <code>v-click + v-click.double</code>
+          <span class="counts"><hit-count label="click" :n="hits.single"></hit-count><hit-count label="double" :n="hits.pair"></hit-count></span>
+        </button>
+      </section>
+
+      <section>
+        <h2>Disabled</h2>
+        <p>Clicks are ignored while the button is <code>disabled</code>.</p>
+        <label><input type="checkbox" v-model="disabled"> disabled</label>
+        <button :disabled="disabled" v-click="() => hit('disabled')"><code>v-click</code><hit-count :n="hits.disabled"></hit-count></button>
+      </section>
+
+      <section>
+        <h2>Styling</h2>
+        <p>Pressed elements get <code>data-vc-state-active</code>, which is more reliable than <code>:active</code>.
+          Each behavior also adds an attribute, such as <code>data-vc-bind-hold</code>. This page uses:</p>
+        <pre><code>button[data-vc-state-active] {
+  box-shadow: inset 0 0 8px #0006;
+}
+
+button[data-vc-state-deactivated] {
+  opacity: 0.5;
+}
+
+button[data-vc-bind-hold] {
+  border-style: dashed;
+}</code></pre>
+      </section>
+    </main>
   </div>
 </body>
 

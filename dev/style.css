@@ -1,102 +1,197 @@
-html, body {
-  margin: 0;
-  font-family: "Courier New", Courier, monospace;
-  background: ghostwhite;
-  height: 100%;
-  width: 100%;
+:root {
+  --text: #1f2328;
+  --muted: #59636e;
+  --page: #f6f8fa;
+  --card: #fff;
+  --line: #d1d9e0;
+  --button: #f6f8fa;
+  --accent: #0969da;
+  --fired: #1a7f37;
+  color-scheme: light;
 }
 
-#app {
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #e6edf3;
+    --muted: #9198a1;
+    --page: #0d1117;
+    --card: #151b23;
+    --line: #3d444d;
+    --button: #212830;
+    --accent: #4493f8;
+    --fired: #3fb950;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 2rem 1rem 3rem;
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--page);
+}
+
+header,
+main {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 2rem;
+}
+
+h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+code,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.875em;
+}
+
+pre {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.hint {
+  color: var(--muted);
+}
+
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+section {
+  padding: 1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+section > p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+section pre {
+  margin: 0;
+  background: var(--page);
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.result {
+  margin: 0.5rem 0 0;
+}
+
+/* Demo buttons, with the styles the README recommends for v-click elements. */
+
+button {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   flex-wrap: wrap;
-  align-items: flex-start;
-  height: 100%;
-  width: 50%;
-}
-
-#app > div:first-child > h1 {
-  font-size: 2.5rem;
-  display: block;
-  margin: 1rem 1rem 0;
-}
-
-#app > div:first-child > a {
-  font-weight: bold;
-  margin: 0 1rem;
-}
-
-#app > div:first-child > p {
-  font-weight: bold;
-}
-
-#app > div:first-child > p > button {
-  padding: 0;
-  margin: 0;
-  display: inline-block;
-  border: none;
-  background-color: transparent;
-  font-weight: bold;
-}
-
-p,
-button {
-  font-size: 1rem;
-  display: block;
-  margin: 1rem;
-}
-
-button {
-  padding: 0.5rem 1rem;
-  color: rgba(0, 0, 0, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  background-color: rgba(0, 0, 0, 0.05);
-  text-decoration: none;
-  border-radius: 2px;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--button);
+  border: 1px solid var(--line);
+  border-radius: 6px;
   cursor: pointer;
   user-select: none;
-  -moz-user-select: none;
-  -khtml-user-select: none;
   -webkit-user-select: none;
-  -o-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
 }
 
-button:focus {
-  outline: none;
+button > code {
+  white-space: nowrap;
 }
 
-button:active,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 button[data-vc-state-active] {
-  outline: none;
-  box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 8px #0006;
 }
 
-button:disabled,
 button[data-vc-state-deactivated] {
-  background: ghostwhite !important;
-  cursor: inherit;
-  outline: none;
-  box-shadow: none;
-}
-
-button[data-vc-bind-click] {
-  background-color: aquamarine;
-}
-
-button[data-vc-bind-double] {
-  background-color: aqua;
+  opacity: 0.5;
 }
 
 button[data-vc-bind-hold] {
-  background-color: lightcyan;
+  border-style: dashed;
 }
 
-button[data-vc-bind-press] {
-  background-color: lavender;
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-button[data-vc-bind-release] {
-  background-color: lavenderblush;
+button.reset {
+  display: inline-block;
+  width: auto;
+  margin: 0 0 0 0.5rem;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+/* A badge is re-created when its count changes, which can happen mid-press (press, hold). Touches go to the button
+   instead, so a badge removed under a finger can't swallow the touchend. */
+output {
+  pointer-events: none;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.counts {
+  display: flex;
+  gap: 0.75rem;
+}
+
+output.fired {
+  color: var(--fired);
+  font-weight: 600;
+  animation: fired 0.4s ease-out;
+}
+
+@keyframes fired {
+  from {
+    transform: scale(1.4);
+  }
 }
