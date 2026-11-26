@@ -538,6 +538,13 @@ test.describe('content re-rendered mid-press', () => {
 })
 
 test.describe('release on touch', () => {
+  test('fires for a tap inside a shadow root', async ({ page }) => {
+    await page.getByTestId('shadowRelease').scrollIntoViewIfNeeded()
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'shadowRelease'))
+    await expectCalls(page, 'shadowRelease', [null])
+  })
+
   test('fires only when the finger is lifted over the element, as with a mouse', async ({ page }) => {
     const touch = await touchscreen(page)
     const start = await finger(page, 'release')

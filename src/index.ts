@@ -513,7 +513,9 @@ const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, [
  * node the touch started on, wherever the finger is lifted, so the point has to be looked up.
  */
 const liftedOver = (el: HTMLElement, touch: Touch) => {
-  const over = document.elementFromPoint(touch.clientX, touch.clientY)
+  // Through the element's own root: inside a shadow root, the document would only find the shadow host.
+  const root = el.getRootNode() as Partial<DocumentOrShadowRoot>
+  const over = root.elementFromPoint?.(touch.clientX, touch.clientY) ?? null
   return over !== null && el.contains(over)
 }
 
