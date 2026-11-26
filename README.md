@@ -115,6 +115,7 @@ Other pairs fire independently. For example, `v-click` with `v-click.double` fir
 - **Scripted events:** events dispatched from scripts (`el.click()`, `dispatchEvent()`) are ignored.
 - **Disabled elements:** presses and clicks on a `disabled` element are ignored. Disabling an element doesn't cancel a `debounce` that's already waiting, though; it still fires.
 - **Default handling:** `v-click` cancels the browser's default handling of presses on the element. The element doesn't take focus on mouse down, and a touch that starts on it doesn't scroll the page.
+- **Click actions:** a mouse click or tap on the element doesn't perform the browser's click action: a button doesn't submit its form, a link doesn't follow its `href`, and a checkbox doesn't toggle. Keyboard activation still does, so give buttons in a form `type="button"` and submit from the handler. A `@click` on the same element runs for mouse clicks and keyboard activation, but not for taps.
 
 # Styling
 
