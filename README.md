@@ -29,7 +29,7 @@ import { ClickDirective as vClick } from 'vue-click'
 </script>
 ```
 
-With the Options API, add `directives: { click: ClickDirective }` to the component. To give it another name, register it yourself: `app.directive('tap', ClickDirective)` makes it `v-tap`. TypeScript types are included.
+With the Options API, add `directives: { click: ClickDirective }` to the component. To give it another name, register it yourself: `app.directive('tap', ClickDirective)` makes it `v-tap`. TypeScript types are included, and installing the plugin registers `v-click` for template type-checking with Vue 3.5 or later (Volar, `vue-tsc`). A value that isn't a handler, such as `v-click="remove(item)"`, is then a type error.
 
 ## CDN
 
