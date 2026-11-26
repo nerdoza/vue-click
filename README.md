@@ -1,270 +1,161 @@
 # Vue Click
 [![Publish](https://github.com/nerdoza/vue-click/actions/workflows/publish.yml/badge.svg)](https://github.com/nerdoza/vue-click/actions/workflows/publish.yml)
 
-Vue 3 plugin for advanced click directive.
+A `v-click` directive for Vue 3. It adds double click, hold, press and release behaviors, plus `once`, `throttle` and `debounce` modifiers. Mouse and touch input behave the same way, and keyboard activation works for plain clicks.
 
-### [🖱️ Demo Page](https://nerdoza.github.io/vue-click/)
+**[Try the demo](https://nerdoza.github.io/vue-click/)**
 
 # Installation
-
-## npm
 
 ```bash
 npm install vue-click
 ```
 
-Install the plugin into Vue:
+Register it for the whole app:
 
 ```javascript
 import { createApp } from 'vue'
 import VueClick from 'vue-click'
+import App from './App.vue'
 
-const app = createApp({/* App Config */})
-app.use(VueClick)
-app.mount('#app')
+createApp(App).use(VueClick).mount('#app')
 ```
+
+Or import the directive only where you need it:
+
+```vue
+<script setup>
+import { ClickDirective as vClick } from 'vue-click'
+</script>
+```
+
+With the Options API, add `directives: { click: ClickDirective }` to the component. To give it another name, register it yourself: `app.directive('tap', ClickDirective)` makes it `v-tap`. TypeScript types are included.
 
 ## CDN
 
-This package is available from the [**JSDELIVR**](https://www.jsdelivr.com/) and [**UNPKG**](https://unpkg.com/) content delivery networks (CDNs) and utilizes the [**UMD**](https://github.com/umdjs/umd#readme) module system so it's ready to use directly in the browser without a build step.
+Without a build step, load the UMD build from [unpkg](https://unpkg.com/) or [jsDelivr](https://www.jsdelivr.com/package/npm/vue-click). It defines a `VueClick` global:
 
 ```html
 <script src="https://unpkg.com/vue@3"></script>
-<script src="https://unpkg.com/vue-click@latest"></script>
+<script src="https://unpkg.com/vue-click@2"></script>
 <script>
-  const app = Vue.createApp({/* App Config */})
-  app.use(VueClick.default)
-  app.mount('#app')
+  Vue.createApp({ /* ... */ }).use(VueClick.default).mount('#app')
 </script>
 ```
 
 # Usage
 
-## Directive
-
-Use the `v-click` directive very similarly to how you would use `v-on:click`:
-
 ```html
-<button v-click="openModal">
+<button v-click="save">Save</button>
+<button v-click.double="zoomIn">Zoom in</button>
+<button v-click.hold.1s="clearAll">Hold to clear</button>
+<button v-click.throttle="submit">Submit</button>
 ```
 
-Further modify the behavior of the button by adding modifiers:
+`v-click` takes a function. Unlike `v-on`, it doesn't take inline statements, so `v-click="remove(item)"` would call `remove` while rendering. To pass a value, use an arrow function: `v-click="() => remove(item)"`.
 
-```html
-<button v-click.double.once="removeAd">
-<button v-click.throttle.400ms="openModal">
-```
-
-Only one behavior and one modifier can be used in a single directive declaration, but multiple directives can be placed on the same element.
-
-The bound function can change after the element mounts (ex: `v-click="ready ? openModal : undefined"`), and each directive removes its listeners and cancels its pending timers when its element unmounts.
+Each `v-click` takes at most one behavior, which sets when it fires, and one modifier, which limits how often. You can put several on one element (see [Combining](#combining)). The handler and its argument can change after mount, and when the value isn't a function, nothing fires. The behavior, modifier and time are fixed at mount.
 
 ## Behaviors
 
-One behavior may be used in a declaration and defines the trigger for the event.
-
-### Single Click Behavior _(Default)_
-
-The `v-click` event will be fired immediately on a click event similar to `v-on:click`: a press that is released on the element within `300ms`.
-
-```html
-<button v-click="openModal">
-```
-
-Keyboard and assistive-technology activation fires it too, once and through the same modifier: <kbd>Enter</kbd> or <kbd>Space</kbd> on a focused `<button>`, or a screen reader's activate command, produce a `click` event with no pointer press before it.
-
-### Double Click Behavior
-
-The `v-click` event can be bound to fire only on a double click. The event is fired only after 2 clicks within a time period.
-
-```html
-<button v-click.double="openModal">
-```
-
-The default time period is `300ms`, but this can be changed by appending the preferred time to the `double` modifier.
-
-```html
-<button v-click.double.1s="openModal">
-```
-
-Double click is a pointer gesture: keyboard and assistive-technology activation doesn't trigger it, so keep its action reachable another way.
-
-### Hold Behavior
-
-The `v-click` event can be bound to fire after a specified amount of time that the button is held down.
-
-```html
-<button v-click.hold="openModal">
-```
-
-The default time period is `300ms`, but this can be changed by appending the preferred time to the `hold` modifier.
-
-```html
-<button v-click.hold.1s="openModal">
-```
-
-Like double click, hold is a pointer gesture that keyboard and assistive-technology activation doesn't trigger.
-
-### Press Behavior
-
-The `v-click` event will be fired immediately on the `down` event, regardless of if the `up` event has occurred. This binding can be combined with the `release` behavior for advanced bindings or for scenarios where event latency is very important.
-
-```html
-<button v-click.press="openModal">
-```
-
-### Release Behavior
-
-The `v-click` event will be fired immediately on the `up` event, which will always be preceded by a `down` event. This binding can be combined with the `press` behavior for advanced bindings or for scenarios where event latency is very important.
-
-```html
-<button v-click.release="openModal">
-```
-
-## Pointer Input
-
-The behaviors listen to touch and mouse events directly, with a few rules that keep stray input from firing them:
-
-- **Primary button only:** only the primary mouse button (usually the left) counts; right and middle clicks never fire a behavior or set the active state. On macOS and iPadOS a <kbd>Control</kbd>-click is the secondary click and is ignored the same way; on other platforms it is a primary click.
-- **Movement tolerance:** a single, double or hold press is cancelled once the pointer moves more than `10px` from where it went down, so a swipe or drag is not a click and a hold doesn't fire after the finger slides away.
-- **Cancel and release outside:** a press ends when the pointer is released anywhere, on the element or off it, when the browser cancels the touch (`touchcancel`), or when a second finger touches the element. Only a release on the element can complete a click, and every way a press ends clears its pending hold and the `data-vc-state-active` attribute.
-- **Trusted input only:** events dispatched by scripts (ex: `element.click()` or `dispatchEvent()`) are ignored.
+| Behavior | Fires when | Default time |
+| --- | --- | --- |
+| _(none)_ | the element is clicked: pressed and released on it within 300ms | |
+| `double` | the element is clicked twice, with the second click starting within the time | 300ms |
+| `hold` | the element has been held down for the time | 300ms |
+| `press` | the element is pressed (`mousedown` or `touchstart`); it doesn't wait for the release | |
+| `release` | the element is released (`mouseup` or `touchend`) | |
 
 ## Modifiers
 
-One modifier may be used in a declaration and changes the behavior of the event trigger to reduce unintended event firing.
+| Modifier | Effect | Default time |
+| --- | --- | --- |
+| `once` | fires the first time, then the directive removes itself | |
+| `throttle` | fires right away, then ignores clicks until none have come for the time | 300ms |
+| `debounce` | fires once the clicks have stopped for the time | 300ms |
 
-### Once Modifier
+## Times
 
-The `once` modifier causes the click listener to only issue a call once and then the binding is disposed.
-
-```html
-<button v-click.double.once="openModal">
-```
-
-### Throttle Modifier
-
-The `v-click` can be throttled to prevent accidentally issuing multiple click events. The event is fired immediately upon the first click, but subsequent clicks are ignored until the desired time interval has passed. Each click resets the time interval.
+Add a time after the behavior or modifier to change its default:
 
 ```html
-<button v-click.throttle="openModal">
+<button v-click.double.500ms="zoomIn">
+<button v-click.hold.2s="clearAll">
+<button v-click.debounce.1m="autosave">
 ```
 
-The default time interval is `300ms`, but this can be changed by appending the preferred time to the `throttle` modifier.
+The units are `ms`, `s` and `m`, and a bare number is milliseconds (`v-click.throttle.200`). When a directive has both a behavior and a modifier, the time applies to both (`v-click.double.throttle.1s`).
+
+## Arguments
+
+The directive's argument is passed to the handler as a string:
 
 ```html
-<button v-click.throttle.500ms="openModal">
+<button v-click:open="toggle">Open</button>  <!-- calls toggle('open') -->
+<button v-click:close.throttle="toggle">Close</button>
 ```
 
-### Debounce Modifier
+Without an argument, the handler gets `null`; it never gets the event. For any other value, use an arrow function.
 
-The `v-click` can be debounced to prevent the premature issuance of click events. The event is fired only after a time period of inactivity. Each click resets the time period.
+## Combining
+
+`v-click` and `v-click.hold` on the same element tell a tap from a long press. A tap has to be released within 300ms, so only one of them fires, as long as the hold time is at least 300ms.
 
 ```html
-<button v-click.debounce="openModal">
+<button v-click="open" v-click.hold="showMenu">
 ```
 
-The default time period is `300ms`, but this can be changed by appending the preferred time to the `debounce` modifier.
+Other pairs fire independently. For example, `v-click` with `v-click.double` fires the click on each of the two clicks as well as the double.
 
-```html
-<button v-click.debounce.20ms="openModal">
-```
+## Input handling
 
-## Time
+- **Mouse buttons:** only the primary button counts. On macOS and iPadOS, a <kbd>Control</kbd>-click is a right click, so it's ignored too.
+- **Cancelled presses:** a click, double click or hold is cancelled if the pointer moves more than 10px, is released off the element, or the browser cancels the touch. A second finger on the element cancels it too.
+- **Keyboard:** <kbd>Enter</kbd>, <kbd>Space</kbd> and screen reader activation trigger a plain `v-click`, modifier included. `double`, `hold`, `press` and `release` are pointer gestures, so make their actions reachable another way too.
+- **Scripted events:** events dispatched from scripts (`el.click()`, `dispatchEvent()`) are ignored.
+- **Disabled elements:** nothing fires while the element is `disabled`.
+- **Default handling:** `v-click` cancels the browser's default handling of presses on the element. The element doesn't take focus on mouse down, and a touch that starts on it doesn't scroll the page.
 
-The time attribute allows overriding of default times by appending the time period to the end of the behavior or modifier (`double`, `hold`, `throttle` or `debounce`).
+# Styling
 
-Time modifiers automatically use milliseconds as the default unit of measure, but additional units are supported by appending the unit abbreviation to the value.
+`v-click` sets data attributes you can style:
 
-**Time Units:**
+| Attribute | Present |
+| --- | --- |
+| `data-vc-bind-click`, `-double`, `-hold`, `-press`, `-release` | while that behavior is bound; the value is its modifier, if any (`once`, `throttle`, `debounce`) |
+| `data-vc-state-active` | while the element is pressed |
+| `data-vc-state-deactivated` | after a `once` directive has fired and removed itself |
 
-- `ms` - Milliseconds
-- `s` - Seconds
-- `m` - Minutes
-
-```html
-<button v-click.throttle.1s="openModal">
-```
-
-**Note:** When applied to a declaration with two time sensitive interactions (ex: `double.throttle`) the same time is applied to both attributes.
-
-## Function Call Arguments
-
-When it is necessary to pass an argument to the function triggered on the click event, add the argument to the end of the directive as an argument.
-
-```html
-<button v-click.throttle:open="buttonPress">
-```
-
-```javascript
-buttonPress (arg) {
-  if (arg === 'open') {
-    openModal()
-  }
-}
-```
-
-For the above example, the `buttonPress` function will be called with the string `open` passed in as the argument. There is only support for a single argument and it will always be passed in as a string.
-
-## Styling
-
-The addition of `TouchEvent` support has resulted in the breaking of normal event propagation which means pseudo-classes like `:active` and `:focus` will no longer activate on these events. Instead, the `data-vc-state-active` data attribute will be applied during the target elements active state. This works better across both mobile and desktop environments than the `:active` state as it's cleared when the user's finger is removed (where `:active` persists until focus is changed). It's also cleared when the press is cancelled: released off the element, moved past the [movement tolerance](#pointer-input) or interrupted by `touchcancel` or a second finger. There is also a `data-vc-state-deactivated` data attribute which is applied when the binding is removed from an element (ex: `once` modifier).
-
-This plugin also provides data attributes for the behavior to allow advanced styling based on the desired user experience.
+Use `data-vc-state-active` instead of `:active`. With the browser's default handling cancelled, `:active` and `:focus` don't apply reliably, and the attribute is cleared as soon as a press ends or is cancelled. Keep a `:focus-visible` style for keyboard users.
 
 ```css
 button {
-  text-decoration: none;
-  cursor: pointer;
-  user-select: none;
+  user-select: none;                        /* holding doesn't select text */
   -webkit-tap-highlight-color: transparent;
-  touch-action: none;
+  touch-action: none;                       /* no double-tap zoom */
 }
 
-button:focus {
-  outline: none;
-}
-
-button:active,
 button[data-vc-state-active] {
-  outline: none;
-  box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 8px rgb(0 0 0 / 40%);
 }
 
-button:disabled,
 button[data-vc-state-deactivated] {
-  background: ghostwhite !important;
-  cursor: inherit;
-  outline: none;
-  box-shadow: none;
-}
-
-button[data-vc-bind-click] {
-  background-color: aquamarine;
-}
-
-button[data-vc-bind-double] {
-  background-color: aqua;
+  opacity: 0.5;
+  cursor: default;
 }
 
 button[data-vc-bind-hold] {
-  background-color: lightcyan;
-}
-
-button[data-vc-bind-press] {
-  background-color: lavender;
+  border-style: dashed;                     /* hint that this one needs a long press */
 }
 ```
 
-**Note:** When the `once` modifier is applied, the `data-vc-bind-*` attribute is removed along with the event listener (after the event fires).
-
 # Development
 
-Development needs Node.js 22.15 or later (CI runs Node.js 26). `npm run dev` serves the demo page, and `npm run lint` and `npm run typecheck` check the code.
+Development needs Node.js 22.15 or later (CI runs Node.js 26). `npm run dev` serves the demo page from `dev/`, and `npm run lint` and `npm run typecheck` check the code.
 
-`npm test` runs the Playwright suite in `tests/`, which drives a test page with real mouse, keyboard and touch input in Chromium; install the browser once with `npx playwright install chromium`. `npm run test:package` builds and packs the package as npm would publish it, then type-checks a consumer against its typings, runs the same suite against the packed bundle, and loads it from a `<script>` tag and on the server (see `tests/package`).
+`npm test` runs the Playwright suite in `tests/`, which drives a test page with real mouse, keyboard and touch input in Chromium. Install the browser once with `npx playwright install chromium`. `npm run test:package` builds and packs the package as npm would publish it. It then type-checks a consumer against the package's typings, runs the same suite against the packed bundle, and loads the bundle from a `<script>` tag and on the server (see `tests/package`).
 
-To release, bump `version` in `package.json` and merge to `main`. The Publish workflow runs the tests, then publishes any version npm doesn't have yet through npm trusted publishing (no npm token is stored; provenance is attached automatically), deploys the demo and creates the GitHub release. If a release fails partway, re-run the workflow, or run it by hand from the Actions tab: it finishes whichever steps haven't succeeded for that version.
+To release, bump `version` in `package.json` and merge to `main`. The Publish workflow runs the tests, then publishes any version npm doesn't have yet. It publishes through npm trusted publishing, so no npm token is stored and provenance is attached automatically. It then deploys the demo and creates the GitHub release. If a release fails partway, re-run the workflow, or run it by hand from the Actions tab: it finishes whichever steps haven't succeeded for that version.
 
 ---
 
