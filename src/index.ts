@@ -51,6 +51,97 @@ const listen = <E extends Event>(target: EventTarget, types: string[], listener:
   return () => types.forEach(type => target.removeEventListener(type, listener as EventListener, options))
 }
 
+/** Elements with a `v-click.stop`, and how many: they claim the input that starts inside them. */
+const claimingElements = new WeakMap<Node, number>()
+
+const claim = (el: HTMLElement): Teardown => {
+  claimingElements.set(el, (claimingElements.get(el) ?? 0) + 1)
+  let claimed = true
+  return () => {
+    if (claimed) {
+      claimed = false
+      const count = (claimingElements.get(el) ?? 1) - 1
+      if (count > 0) {
+        claimingElements.set(el, count)
+      } else {
+        claimingElements.delete(el)
+      }
+    }
+  }
+}
+
+/** Whether input aimed at `target` was claimed by a `v-click.stop` element inside `el`, so `el` leaves it alone. */
+const claimedInside = (el: HTMLElement, target: EventTarget | null) => {
+  for (let node = target as Node | null; node !== null && node !== el; node = node.parentNode) {
+    if (claimingElements.has(node)) {
+      return true
+    }
+  }
+  return false
+}
+
+interface Claims {
+  /** Whether the mouse press under way on `el`, or the click its release makes, started in a claimed descendant. */
+  mouse: () => boolean
+  /** Whether the touch with this identifier started in a claimed descendant. */
+  touch: (identifier: number) => boolean
+  teardown: Teardown
+}
+
+/**
+ * Remembers which presses on `el` a `v-click.stop` descendant claimed. That's decided as each press starts and holds
+ * through its release and the click after it, even if the claim goes away meanwhile (a `once.stop` that fires on the
+ * way down) or the release lands outside the descendant. Listening in the capture phase on `el`, this sees each press
+ * before the descendant's own directives do.
+ */
+const rememberClaims = (el: HTMLElement): Claims => {
+  let mouseClaimed = false
+  let unlistenRelease: Teardown = () => {}
+  const claimedTouches = new Set<number>()
+
+  const unlisten = [
+    listen(el, ['mousedown'], (event: MouseEvent) => {
+      if (!event.isTrusted) {
+        return
+      }
+      unlistenRelease()
+      unlistenRelease = () => {}
+      mouseClaimed = claimedInside(el, event.target)
+      if (mouseClaimed) {
+        unlistenRelease = listen(window, ['mouseup'], (release: MouseEvent) => {
+          if (release.isTrusted && release.button === event.button) {
+            unlistenRelease()
+            unlistenRelease = () => {}
+            // The browser dispatches a release's click right after its mouseup, before any timer runs.
+            setTimeout(() => { mouseClaimed = false })
+          }
+        }, passiveEventOptions)
+      }
+    }, passiveEventOptions),
+    listen(el, ['touchstart'], (event: TouchEvent) => {
+      if (event.isTrusted) {
+        for (let i = 0; i < event.changedTouches.length; i++) {
+          const { identifier, target } = event.changedTouches[i]
+          if (claimedInside(el, target)) {
+            claimedTouches.add(identifier)
+          } else {
+            claimedTouches.delete(identifier)
+          }
+        }
+      }
+    }, passiveEventOptions)
+  ]
+
+  return {
+    mouse: () => mouseClaimed,
+    touch: (identifier) => claimedTouches.has(identifier),
+    teardown: () => {
+      unlisten.forEach(stop => stop())
+      unlistenRelease()
+    }
+  }
+}
+
 interface Timer {
   pending: () => boolean
   start: (time: number, callback?: () => void) => void
@@ -82,6 +173,7 @@ const createTimer = (): Timer => {
 interface PressTracker {
   /** Whether a pointer is pressing `el`, or pressed or released it within `pointerClickGuard`. */
   recentlyPressed: () => boolean
+  claims: Claims
   teardown: Teardown
 }
 
@@ -91,6 +183,7 @@ interface PressTracker {
  * too far, released elsewhere, interrupted by `touchcancel` or another touch on `el`, or torn down.
  */
 const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: boolean) => void, preventDefault = true): PressTracker => {
+  const claims = rememberClaims(el)
   let press: { x: number, y: number, touchId: number | null } | null = null
   /** Removes the listeners that follow the current press: on `window` for a mouse, on the touched node for a touch. */
   let unlistenPress: Teardown = () => {}
@@ -142,7 +235,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   }
 
   const onTouchStart = (event: TouchEvent) => {
-    if (!accept(event)) {
+    if (claimedInside(el, event.target) || !accept(event)) {
       return
     }
 
@@ -152,9 +245,11 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
       finish(false)
     }
 
+    // Fingers on a claimed descendant belong to it, not to this element's gesture.
     let touchesOnElement = 0
     for (let i = 0; i < event.touches.length; i++) {
-      if (el.contains(event.touches[i].target as Node)) {
+      const { identifier, target } = event.touches[i]
+      if (el.contains(target as Node) && !claims.touch(identifier)) {
         touchesOnElement++
       }
     }
@@ -178,7 +273,12 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   }
 
   const onTouchEnd = (event: TouchEvent) => {
-    if (accept(event) && findTouch(event.changedTouches) !== null) {
+    // The end of a claimed touch is its descendant's alone; it mustn't count as recent input here.
+    let claimedOnly = true
+    for (let i = 0; i < event.changedTouches.length; i++) {
+      claimedOnly &&= claims.touch(event.changedTouches[i].identifier)
+    }
+    if (!claimedOnly && accept(event) && findTouch(event.changedTouches) !== null) {
       finish(event.type === 'touchend')
     }
   }
@@ -210,7 +310,7 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
   }
 
   const onMouseDown = (event: MouseEvent) => {
-    if (!accept(event) || !isPrimaryButton(event)) {
+    if (claimedInside(el, event.target) || !accept(event) || !isPrimaryButton(event)) {
       return
     }
 
@@ -228,13 +328,19 @@ const trackPress = (el: HTMLElement, onStart: () => void, onEnd: (released: bool
     listen(el, ['touchmove'], onTouchMove, passiveEventOptions),
     listen(el, ['touchend', 'touchcancel'], onTouchEnd),
     listen(el, ['mousedown'], onMouseDown),
-    listen(el, ['mouseup'], accept)
+    listen(el, ['mouseup'], (event: MouseEvent) => {
+      if (!claims.mouse()) {
+        accept(event)
+      }
+    })
   ]
 
   return {
     recentlyPressed: () => press !== null || Date.now() - lastPointerAt < pointerClickGuard,
+    claims,
     teardown: () => {
       unlistenElement.forEach(unlisten => unlisten())
+      claims.teardown()
       finish(false)
     }
   }
@@ -320,7 +426,7 @@ const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
 
   // Keyboard and assistive-tech activation reach the element as a `click` with no pointer press before it.
   const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
-    if (event.isTrusted && !tracker.recentlyPressed()) {
+    if (event.isTrusted && !tracker.recentlyPressed() && !tracker.claims.mouse() && !claimedInside(el, event.target)) {
       fire()
     }
   })
@@ -370,9 +476,9 @@ const holdBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
   }
 }
 
-/** Fires on each trusted edge event of the primary input, cancelling its default action. */
-const onEdge = (fire: Fire) => (event: MouseEvent | TouchEvent) => {
-  if (event.isTrusted) {
+/** Fires on each trusted edge event of the primary input on `el`, cancelling its default action. */
+const onEdge = (el: HTMLElement, fire: Fire) => (event: MouseEvent | TouchEvent) => {
+  if (event.isTrusted && !claimedInside(el, event.target)) {
     if (event.cancelable) {
       event.preventDefault()
     }
@@ -383,10 +489,10 @@ const onEdge = (fire: Fire) => (event: MouseEvent | TouchEvent) => {
   }
 }
 
-const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, ['touchstart', 'mousedown'], onEdge(fire))
+const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, ['touchstart', 'mousedown'], onEdge(el, fire))
 
 const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
-  const onRelease = onEdge(fire)
+  const onRelease = onEdge(el, fire)
   const following = new Set<Teardown>()
   /** Fingers lifted together share one `touchend`, which is one release, however many of them were followed. */
   let lastRelease: TouchEvent | null = null
@@ -399,7 +505,7 @@ const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
     }
     for (let i = 0; i < event.changedTouches.length; i++) {
       const { identifier, target } = event.changedTouches[i]
-      if (!el.contains(target as Node)) {
+      if (!el.contains(target as Node) || claimedInside(el, target)) {
         continue
       }
       const stop = () => {
@@ -426,13 +532,20 @@ const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
     }
   }
 
+  // A mouse press claimed as it started stays claimed through its release, wherever that lands.
+  const claims = rememberClaims(el)
   const unlisten = [
     listen(el, ['touchstart'], onTouchStart, passiveEventOptions),
-    listen(el, ['mouseup'], onRelease)
+    listen(el, ['mouseup'], (event: MouseEvent) => {
+      if (!claims.mouse()) {
+        onRelease(event)
+      }
+    })
   ]
 
   return () => {
     unlisten.forEach(stop => stop())
+    claims.teardown()
     following.forEach(stop => stop())
   }
 }
@@ -513,11 +626,13 @@ export const ClickDirective: Directive = {
     const dataBinding = dataBindingPrefix + dataBindPostfixes[bindingOptions.behavior]
     const deactivate = bindActiveState(el)
     const clickActions = guardClickActions(el)
+    const unclaim = bindingOptions.stop ? claim(el) : () => {}
     const removeBinding = () => {
       teardownBehavior()
       deactivate(true)
       // The press that fired this `once` may still be under way, and its click still has to be cancelled.
       clickActions.stop()
+      unclaim()
       delete (el.dataset[dataBinding])
     }
     const teardownBehavior = behaviors[bindingOptions.behavior](el, bindingOptions, () => {
@@ -535,6 +650,7 @@ export const ClickDirective: Directive = {
         modifier.teardown()
         deactivate(false)
         clickActions.teardown()
+        unclaim()
       }
     })
     elementBindings.set(el, bindings)

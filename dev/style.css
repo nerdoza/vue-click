@@ -145,8 +145,27 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-button[data-vc-state-active] {
+button[data-vc-state-active],
+.card[data-vc-state-active] {
   box-shadow: inset 0 0 8px #0006;
+}
+
+.card {
+  padding: 0.5rem 0.75rem 0.75rem;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+button.card-label {
+  margin-top: 0;
+  padding: 0.25rem 0;
+  background: none;
+  border: none;
 }
 
 button[data-vc-state-deactivated] {

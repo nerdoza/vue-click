@@ -41,6 +41,15 @@ const center = async (locator: Locator): Promise<Point> => {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
 }
 
+/** A point in the margin of an element with others inside it, clear of them. */
+const margin = async (page: Page, testId: string): Promise<Point> => {
+  const box = await page.getByTestId(testId).boundingBox()
+  if (box === null) {
+    throw new Error('element is not visible')
+  }
+  return { x: box.x + 6, y: box.y + 6 }
+}
+
 const callsOf = async (page: Page, id: string) => {
   return await page.evaluate((id) => window.calls.filter(call => call.id === id).map(call => call.arg), id)
 }
@@ -619,6 +628,82 @@ test.describe('the browser\'s click action', () => {
     await page.keyboard.press('Enter')
     await expectCalls(page, 'formSingle', [null])
     await expectCalls(page, 'formSubmit', [null])
+  })
+})
+
+test.describe('nested elements', () => {
+  test('a press on a v-click inside another fires both', async ({ page }) => {
+    await click(page, 'inner')
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'inner'))
+    await expectCalls(page, 'inner', [null, null])
+    await expectCalls(page, 'outer', [null, null])
+  })
+
+  test('stop keeps keyboard, mouse and touch input from the v-click around it', async ({ page }) => {
+    // Keyboard first: a click just after a pointer press on the element counts as that press's own.
+    await page.getByTestId('innerStop').focus()
+    await page.keyboard.press('Enter')
+    await click(page, 'innerStopLabel')
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'innerStopLabel'))
+    await expectCalls(page, 'innerStop', [null, null, null])
+    expect(await callsOf(page, 'outer')).toEqual([])
+  })
+
+  test('the element around a stop is not marked active by its presses', async ({ page }) => {
+    const outer = page.getByTestId('outer')
+    await pointAt(page, 'innerStop')
+    await page.mouse.down()
+    await expect(page.getByTestId('innerStop')).toHaveAttribute('data-vc-state-active', '')
+    await expect(outer).not.toHaveAttribute('data-vc-state-active')
+    await page.mouse.up()
+  })
+
+  test('stop combines with a behavior', async ({ page }) => {
+    // A short click is no hold, and the stop keeps it from the outer click.
+    await click(page, 'innerHoldStop')
+    await pressFor(page, 'innerHoldStop', 500)
+    await expectCalls(page, 'innerHoldStop', [null])
+    expect(await callsOf(page, 'outer')).toEqual([])
+  })
+
+  test('the element around still gets its own presses', async ({ page }) => {
+    const { x, y } = await margin(page, 'outer')
+    await page.mouse.click(x, y)
+    await expectCalls(page, 'outer', [null])
+  })
+
+  test('a finger held on a stop does not cancel a tap on the element around it', async ({ page }) => {
+    const touch = await touchscreen(page)
+    const held = await finger(page, 'innerStop', 1)
+    const tap = { ...await margin(page, 'outer'), id: 2 }
+    await touch.start(held)
+    await touch.start(held, tap)
+    await touch.end(tap)
+    await expectCalls(page, 'outer', [null])
+    await touch.end()
+  })
+
+  test('a keyboard click right after a press on a stop still reaches the element around', async ({ page }) => {
+    await click(page, 'innerStop')
+    await page.getByTestId('inner').focus()
+    await page.keyboard.press('Enter')
+    await expectCalls(page, 'inner', [null])
+    await expectCalls(page, 'outer', [null])
+  })
+
+  test('a press that starts on a stop never releases the element around it', async ({ page }) => {
+    // Released over the element around it, outside the stop.
+    await pointAt(page, 'releaseStopChild')
+    await page.mouse.down()
+    const { x, y } = await margin(page, 'outerRelease')
+    await page.mouse.move(x, y, { steps: 4 })
+    await page.mouse.up()
+    // Released on a press.once.stop, whose claim ends as it fires on the way down.
+    await pressFor(page, 'pressOnceStopChild', 50)
+    await expectCalls(page, 'pressOnceStopChild', [null])
+    await expectCallsAfter(page, 100, 'outerRelease', [])
   })
 })
 
