@@ -11,6 +11,7 @@ interface PageState {
   showHold: boolean
   showDebounce: boolean
   altLabel: boolean
+  debounceDisabled: boolean
 }
 
 declare global {
@@ -283,6 +284,15 @@ test.describe('behaviors', () => {
     const touch = await touchscreen(page)
     await touch.tap(await finger(page, 'disabled'))
     await expectCallsAfter(page, 400, 'disabled', [])
+  })
+
+  test('a debounce still waiting when its element is disabled never fires', async ({ page }) => {
+    await click(page, 'debounceDisable')
+    await setState(page, { debounceDisabled: true })
+    await expectCallsAfter(page, 800, 'debounceDisable', [])
+    await setState(page, { debounceDisabled: false })
+    await click(page, 'debounceDisable')
+    await expectCalls(page, 'debounceDisable', [null])
   })
 
   test('time units parse to milliseconds', async ({ page }) => {
