@@ -56,7 +56,7 @@ const ids = [
   'swapB', 'unmountHold', 'unmountDebounce', 'tileA', 'tileB', 'relabel', 'relabelHold', 'relabelRelease',
   'formSingle', 'formHold', 'formSubmit', 'link', 'outer', 'inner', 'innerStop', 'innerHoldStop', 'outerRelease',
   'releaseStopChild', 'pressOnceStopChild', 'debounceDisable', 'onceThenHold', 'holdAfterOnce', 'holdThenOnce',
-  'onceAfterHold', 'onceA', 'onceB', 'bareUnit', 'typo', 'twoBehaviors', 'twoModifiers'
+  'onceAfterHold', 'onceA', 'onceB', 'bareUnit', 'typo', 'twoBehaviors', 'twoModifiers', 'shadowRelease'
 ]
 const handlers: Record<string, (arg: unknown) => unknown> = {}
 ids.forEach(id => { handlers[id] = (arg) => { calls.push({ id, arg }) } })
@@ -142,3 +142,18 @@ app.config.errorHandler = (error) => {
 }
 app.use(VueClick)
 app.mount('#app')
+
+// A v-click inside a shadow root, as in a Vue custom element.
+const shadowHost = document.createElement('div')
+shadowHost.dataset.testid = 'shadowHost'
+const shadowMount = document.createElement('div')
+shadowHost.attachShadow({ mode: 'open' }).append(shadowMount)
+document.body.append(shadowHost)
+createApp({
+  setup: () => ({ h: handlers }),
+  template: `
+    <button data-testid="shadowRelease" style="width: 180px; height: 56px; touch-action: none" v-click.release="h.shadowRelease">
+      shadow release
+    </button>
+  `
+}).use(VueClick).mount(shadowMount)

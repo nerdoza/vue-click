@@ -538,6 +538,29 @@ test.describe('content re-rendered mid-press', () => {
 })
 
 test.describe('release on touch', () => {
+  test('fires for a tap inside a shadow root', async ({ page }) => {
+    await page.getByTestId('shadowRelease').scrollIntoViewIfNeeded()
+    const touch = await touchscreen(page)
+    await touch.tap(await finger(page, 'shadowRelease'))
+    await expectCalls(page, 'shadowRelease', [null])
+  })
+
+  test('fires only when the finger is lifted over the element, as with a mouse', async ({ page }) => {
+    const touch = await touchscreen(page)
+    const start = await finger(page, 'release')
+    const away = { ...start, x: start.x + 250, y: start.y + 300 }
+    await touch.start(start)
+    await touch.move(away)
+    await touch.end()
+    await expectCallsAfter(page, 100, 'release', [])
+
+    await touch.start(start)
+    await touch.move(away)
+    await touch.move(start)
+    await touch.end()
+    await expectCalls(page, 'release', [null])
+  })
+
   // CDP lifts each finger in a touchend of its own. (Fingers lifted in one touchend are one release, which CDP can't
   // send.)
   test('each finger lifted is a release', async ({ page }) => {

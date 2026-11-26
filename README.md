@@ -66,7 +66,7 @@ As with `v-on`, an error the handler throws, or a promise it returns that reject
 | `double` | the element is clicked twice, with the second click starting within the time | 300ms |
 | `hold` | the element has been held down for the time | 300ms |
 | `press` | the element is pressed (`mousedown` or `touchstart`); it doesn't wait for the release | |
-| `release` | the element is released (`mouseup` or `touchend`) | |
+| `release` | the pointer is released over the element (`mouseup` or `touchend`) | |
 
 ## Modifiers
 

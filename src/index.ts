@@ -508,6 +508,17 @@ const onEdge = (el: HTMLElement, fire: Fire) => (event: MouseEvent | TouchEvent)
 
 const pressBehavior: BehaviorBinder = (el, bindingOptions, fire) => listen(el, ['touchstart', 'mousedown'], onEdge(el, fire))
 
+/**
+ * Whether a touch was lifted over `el`. A `mouseup` goes to the element under the pointer, but a `touchend` goes to the
+ * node the touch started on, wherever the finger is lifted, so the point has to be looked up.
+ */
+const liftedOver = (el: HTMLElement, touch: Touch) => {
+  // Through the element's own root: inside a shadow root, the document would only find the shadow host.
+  const root = el.getRootNode() as Partial<DocumentOrShadowRoot>
+  const over = root.elementFromPoint?.(touch.clientX, touch.clientY) ?? null
+  return over !== null && el.contains(over)
+}
+
 const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
   const onRelease = onEdge(el, fire)
   const following = new Set<Teardown>()
@@ -535,9 +546,13 @@ const releaseBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
           return
         }
         for (let j = 0; j < end.changedTouches.length; j++) {
-          if (end.changedTouches[j].identifier === identifier) {
+          const touch = end.changedTouches[j]
+          if (touch.identifier === identifier) {
             stop()
-            if (end.type === 'touchend' && end !== lastRelease) {
+            if (end.cancelable) {
+              end.preventDefault()
+            }
+            if (end.type === 'touchend' && end !== lastRelease && liftedOver(el, touch)) {
               lastRelease = end
               onRelease(end)
             }
