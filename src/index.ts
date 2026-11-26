@@ -382,7 +382,9 @@ const guardClickActions = (el: HTMLElement): ClickActionGuard => {
   }, passiveEventOptions)
 
   const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
-    if (armed && event.isTrusted) {
+    // Only a mouse's click (`detail`, its click count, above 0): input can be handled ahead of the timer that disarms
+    // the guard, so a keyboard click can arrive while it's still armed.
+    if (armed && event.isTrusted && event.detail > 0) {
       armed = false
       event.preventDefault()
     }
@@ -426,7 +428,10 @@ const singleBehavior: BehaviorBinder = (el, bindingOptions, fire) => {
 
   // Keyboard and assistive-tech activation reach the element as a `click` with no pointer press before it.
   const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
-    if (event.isTrusted && !tracker.recentlyPressed() && !tracker.claims.mouse() && !claimedInside(el, event.target)) {
+    // The click a claimed mouse press makes is a mouse click (`detail` above 0). A keyboard click can arrive before the
+    // claim is cleared, since input is handled ahead of the timer that clears it, so it mustn't be taken for one.
+    const claimedPressClick = event.detail > 0 && tracker.claims.mouse()
+    if (event.isTrusted && !tracker.recentlyPressed() && !claimedPressClick && !claimedInside(el, event.target)) {
       fire()
     }
   })
