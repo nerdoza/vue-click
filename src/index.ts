@@ -255,24 +255,29 @@ interface ClickActionGuard {
  * before it and keeps its action.
  */
 const guardClickActions = (el: HTMLElement): ClickActionGuard => {
-  let releasedAt = 0
+  /** Set by the release of a primary press on `el`, for the `click` (if any) that the release makes. */
+  let armed = false
   let unlistenRelease: Teardown = () => {}
 
   const unlistenPress = listen(el, ['mousedown'], (event: MouseEvent) => {
-    if (event.isTrusted) {
+    if (event.isTrusted && event.button === 0) {
       unlistenRelease()
-      // The `click` is dispatched right after the `mouseup`, wherever the button is released.
+      // Wherever the button is released; other buttons pressed and released meanwhile don't end this press.
       unlistenRelease = listen(window, ['mouseup'], (release: MouseEvent) => {
-        if (release.isTrusted) {
-          releasedAt = Date.now()
+        if (release.isTrusted && release.button === 0) {
           unlistenRelease()
+          // The browser dispatches a release's `click` right after its `mouseup`, before any timer runs, so this
+          // covers that click alone: a later click, from the keyboard say, keeps its action.
+          armed = true
+          setTimeout(() => { armed = false })
         }
       }, passiveEventOptions)
     }
   }, passiveEventOptions)
 
   const unlistenClick = listen(el, ['click'], (event: MouseEvent) => {
-    if (event.isTrusted && Date.now() - releasedAt < pointerClickGuard) {
+    if (armed && event.isTrusted) {
+      armed = false
       event.preventDefault()
     }
   })

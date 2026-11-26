@@ -582,14 +582,36 @@ test.describe('the browser\'s click action', () => {
     expect(await hash(page)).toBe('')
   })
 
-  test('nor the mouse press that fires a once', async ({ page }) => {
+  test('nor the mouse press that fires a once, though the next click, unbound, does', async ({ page }) => {
     await page.evaluate(() => {
-      const once = document.querySelector('[data-testid="once"]')
-      once?.addEventListener('click', event => { Object.assign(window, { onceClickPrevented: event.defaultPrevented }) })
+      const prevented: boolean[] = []
+      Object.assign(window, { prevented })
+      document.querySelector('[data-testid="once"]')?.addEventListener('click', event => { prevented.push(event.defaultPrevented) })
     })
     await click(page, 'once')
+    await click(page, 'once')
     await expectCalls(page, 'once', [null])
-    expect(await page.evaluate(() => (window as unknown as { onceClickPrevented: boolean }).onceClickPrevented)).toBe(true)
+    expect(await page.evaluate(() => (window as unknown as { prevented: boolean[] }).prevented)).toEqual([true, false])
+  })
+
+  test('a keyboard click right after a mouse click keeps its action', async ({ page }) => {
+    await click(page, 'formHold')
+    await page.getByTestId('formHold').focus()
+    await page.keyboard.press('Enter')
+    await expectCalls(page, 'formSubmit', [null])
+  })
+
+  // Chromium dispatches no click for this press at all, so here the test only pins the result; the guard also waits
+  // for the primary button's own release for browsers that do.
+  test('another button pressed and released meanwhile does not end the mouse press', async ({ page }) => {
+    await pointAt(page, 'formHold')
+    await page.mouse.down()
+    await page.mouse.down({ button: 'right' })
+    await page.mouse.up({ button: 'right' })
+    await page.waitForTimeout(700)
+    await page.mouse.up()
+    await expectCalls(page, 'formHold', [null])
+    expect(await callsOf(page, 'formSubmit')).toEqual([])
   })
 
   test('keyboard activation keeps it', async ({ page }) => {
